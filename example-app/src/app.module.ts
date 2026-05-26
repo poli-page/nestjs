@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { PoliPageModule } from '@poli-page/nestjs'
+import { DemoController } from './demo/demo.controller'
 import { RenderController } from './render/render.controller'
 import { DocumentController } from './documents/document.controller'
 import { ErrorController } from './errors/error.controller'
@@ -14,6 +15,6 @@ import { ErrorController } from './errors/error.controller'
       }),
     }),
   ],
-  controllers: [RenderController, DocumentController, ErrorController],
+  controllers: [DemoController, RenderController, DocumentController, ErrorController],
 })
 export class AppModule {}
