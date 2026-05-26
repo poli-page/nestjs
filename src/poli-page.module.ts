@@ -4,7 +4,7 @@ import { PoliPage, type PoliPageOptions } from '@poli-page/sdk'
 import { PoliPageService } from './poli-page.service'
 import { PoliPageExceptionFilter } from './poli-page-exception.filter'
 import { POLI_PAGE_CLIENT_TOKEN, POLI_PAGE_OPTIONS_TOKEN } from './poli-page.tokens'
-import type { PoliPageModuleOptions } from './poli-page.options'
+import type { PoliPageModuleOptions, PoliPageModuleAsyncOptions, PoliPageOptionsFactory } from './poli-page.options'
 import { validatePoliPageOptions } from './validation'
 
 @Global()
@@ -34,6 +34,75 @@ export class PoliPageModule {
       providers: [optionsProvider, clientProvider, PoliPageService, ...filterProviders],
       exports: [POLI_PAGE_CLIENT_TOKEN, PoliPageService],
     }
+  }
+
+  static forRootAsync(asyncOptions: PoliPageModuleAsyncOptions): DynamicModule {
+    const asyncProviders = PoliPageModule.createAsyncProviders(asyncOptions)
+
+    const clientProvider: Provider = {
+      provide: POLI_PAGE_CLIENT_TOKEN,
+      useFactory: (opts: PoliPageModuleOptions): PoliPage => {
+        validatePoliPageOptions(opts)
+        return buildClient(opts)
+      },
+      inject: [POLI_PAGE_OPTIONS_TOKEN],
+    }
+
+    const filterProviders: Provider[] = asyncOptions.registerGlobalExceptionFilter
+      ? [{ provide: APP_FILTER, useClass: PoliPageExceptionFilter }]
+      : []
+
+    return {
+      module: PoliPageModule,
+      global: true,
+      imports: asyncOptions.imports ?? [],
+      providers: [
+        ...asyncProviders,
+        clientProvider,
+        PoliPageService,
+        ...filterProviders,
+      ],
+      exports: [POLI_PAGE_CLIENT_TOKEN, PoliPageService],
+    }
+  }
+
+  private static createAsyncProviders(asyncOptions: PoliPageModuleAsyncOptions): Provider[] {
+    if (asyncOptions.useFactory) {
+      return [
+        {
+          provide: POLI_PAGE_OPTIONS_TOKEN,
+          useFactory: asyncOptions.useFactory,
+          inject: asyncOptions.inject ?? [],
+        },
+      ]
+    }
+    if (asyncOptions.useExisting) {
+      return [
+        {
+          provide: POLI_PAGE_OPTIONS_TOKEN,
+          useFactory: async (factory: PoliPageOptionsFactory) =>
+            factory.createPoliPageOptions(),
+          inject: [asyncOptions.useExisting],
+        },
+      ]
+    }
+    if (asyncOptions.useClass) {
+      return [
+        {
+          provide: asyncOptions.useClass,
+          useClass: asyncOptions.useClass,
+        },
+        {
+          provide: POLI_PAGE_OPTIONS_TOKEN,
+          useFactory: async (factory: PoliPageOptionsFactory) =>
+            factory.createPoliPageOptions(),
+          inject: [asyncOptions.useClass],
+        },
+      ]
+    }
+    throw new Error(
+      'PoliPageModule.forRootAsync requires one of useFactory, useClass, or useExisting.',
+    )
   }
 }
 
