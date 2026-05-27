@@ -6,6 +6,8 @@
 
 The official NestJS module for [Poli Page](https://poli.page) — a thin idiomatic veneer over [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk) that turns PDF rendering into a one-line controller method. Global module, injectable SDK client, `StreamableFile`-flavoured PDF responses, RFC 5987 filename encoding, and typed `PoliPageError → HTTP` mapping included.
 
+> **Pre-release status.** Neither `@poli-page/nestjs` nor `@poli-page/sdk@1.x` is on npm yet — the install command below is the eventual shape, not what works today. CI is red until both packages are published. For local development, see [`CLAUDE.md` §9](./CLAUDE.md) for the workspace / `npm link` setup.
+
 ## Install
 
 ```bash
