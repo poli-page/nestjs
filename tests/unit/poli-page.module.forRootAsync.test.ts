@@ -1,5 +1,5 @@
-import { describe, it, expect } from '@jest/globals'
-import { Test } from '@nestjs/testing'
+import { afterEach, describe, it, expect } from '@jest/globals'
+import { Test, type TestingModule } from '@nestjs/testing'
 import { Injectable, Module } from '@nestjs/common'
 import { PoliPage } from '@poli-page/sdk'
 import { PoliPageModule } from '../../src/poli-page.module'
@@ -7,8 +7,15 @@ import { POLI_PAGE_CLIENT_TOKEN } from '../../src/poli-page.tokens'
 import type { PoliPageOptionsFactory, PoliPageModuleOptions } from '../../src/poli-page.options'
 
 describe('PoliPageModule.forRootAsync', () => {
+  let moduleRef: TestingModule | undefined
+
+  afterEach(async () => {
+    await moduleRef?.close()
+    moduleRef = undefined
+  })
+
   it('resolves with useFactory + no inject', async () => {
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         PoliPageModule.forRootAsync({
           useFactory: () => ({ apiKey: 'pp_test_factory' }),
@@ -28,7 +35,7 @@ describe('PoliPageModule.forRootAsync', () => {
     @Module({ providers: [ConfigStub], exports: [ConfigStub] })
     class ConfigModuleStub {}
 
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         PoliPageModule.forRootAsync({
           imports: [ConfigModuleStub],
@@ -49,7 +56,7 @@ describe('PoliPageModule.forRootAsync', () => {
       }
     }
 
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [PoliPageModule.forRootAsync({ useClass: FactoryClass })],
     }).compile()
 
@@ -67,7 +74,7 @@ describe('PoliPageModule.forRootAsync', () => {
     @Module({ providers: [FactoryClass], exports: [FactoryClass] })
     class FactoryModule {}
 
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         FactoryModule,
         PoliPageModule.forRootAsync({
@@ -93,7 +100,7 @@ describe('PoliPageModule.forRootAsync', () => {
   })
 
   it('supports async useFactory (Promise return)', async () => {
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         PoliPageModule.forRootAsync({
           useFactory: async () => {

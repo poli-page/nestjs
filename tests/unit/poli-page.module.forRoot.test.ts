@@ -1,5 +1,5 @@
-import { describe, it, expect } from '@jest/globals'
-import { Test } from '@nestjs/testing'
+import { afterEach, describe, it, expect } from '@jest/globals'
+import { Test, type TestingModule } from '@nestjs/testing'
 import { Injectable, Module } from '@nestjs/common'
 import { PoliPage } from '@poli-page/sdk'
 import { PoliPageModule } from '../../src/poli-page.module'
@@ -8,8 +8,15 @@ import { InjectPoliPage } from '../../src/poli-page.decorator'
 import { POLI_PAGE_CLIENT_TOKEN } from '../../src/poli-page.tokens'
 
 describe('PoliPageModule.forRoot', () => {
+  let moduleRef: TestingModule | undefined
+
+  afterEach(async () => {
+    await moduleRef?.close()
+    moduleRef = undefined
+  })
+
   it('resolves POLI_PAGE_CLIENT_TOKEN to a PoliPage instance', async () => {
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [PoliPageModule.forRoot({ apiKey: 'pp_test_abc' })],
     }).compile()
 
@@ -18,7 +25,7 @@ describe('PoliPageModule.forRoot', () => {
   })
 
   it('exposes PoliPageService', async () => {
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [PoliPageModule.forRoot({ apiKey: 'pp_test_abc' })],
     }).compile()
 
@@ -35,7 +42,7 @@ describe('PoliPageModule.forRoot', () => {
     @Module({ providers: [Consumer], exports: [Consumer] })
     class FeatureModule {}
 
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [
         PoliPageModule.forRoot({ apiKey: 'pp_test_abc' }),
         FeatureModule,
@@ -57,7 +64,7 @@ describe('PoliPageModule.forRoot', () => {
   })
 
   it('does not register global filter by default', async () => {
-    const moduleRef = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       imports: [PoliPageModule.forRoot({ apiKey: 'pp_test_abc' })],
     }).compile()
 
