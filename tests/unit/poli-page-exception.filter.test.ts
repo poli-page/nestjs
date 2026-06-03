@@ -16,7 +16,7 @@ function fakeHost(): { host: ArgumentsHost; res: { status: jest.Mock; json: jest
 }
 
 describe('PoliPageExceptionFilter', () => {
-  it('maps a 4xx PoliPageError to same status with typed JSON body', () => {
+  it('maps a 4xx PoliPageError to same status with canonical JSON body', () => {
     const filter = new PoliPageExceptionFilter()
     const { host, res } = fakeHost()
     const err = new PoliPageError('Bad version', 'INVALID_VERSION_FORMAT', 400, 'req_1')
@@ -27,6 +27,7 @@ describe('PoliPageExceptionFilter', () => {
     expect(res.json).toHaveBeenCalledWith({
       code: 'INVALID_VERSION_FORMAT',
       message: 'Bad version',
+      status: 400,
       requestId: 'req_1',
     })
     expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, private')
@@ -42,30 +43,32 @@ describe('PoliPageExceptionFilter', () => {
     expect(res.status).toHaveBeenCalledWith(503)
   })
 
-  it('maps network errors (no status) to 502 with NETWORK_ERROR', () => {
+  it('maps network errors to 503 with verbatim SDK code', () => {
     const filter = new PoliPageExceptionFilter()
     const { host, res } = fakeHost()
-    const err = new PoliPageError('timeout', 'network_error')
+    const err = new PoliPageError('connection refused', 'network_error')
 
     filter.catch(err, host)
 
-    expect(res.status).toHaveBeenCalledWith(502)
+    expect(res.status).toHaveBeenCalledWith(503)
     expect(res.json).toHaveBeenCalledWith({
-      code: 'NETWORK_ERROR',
-      message: 'timeout',
+      code: 'network_error',
+      message: 'connection refused',
+      status: 503,
       requestId: null,
     })
   })
 
-  it('maps timeout errors to 502 with NETWORK_ERROR', () => {
+  it('maps timeout errors to 504 with verbatim SDK code', () => {
     const filter = new PoliPageExceptionFilter()
     const { host, res } = fakeHost()
     const err = new PoliPageError('timed out', 'timeout')
 
     filter.catch(err, host)
 
-    expect(res.status).toHaveBeenCalledWith(502)
+    expect(res.status).toHaveBeenCalledWith(504)
     const body = (res.json.mock.calls[0] as any[])[0]
-    expect(body.code).toBe('NETWORK_ERROR')
+    expect(body.code).toBe('timeout')
+    expect(body.status).toBe(504)
   })
 })

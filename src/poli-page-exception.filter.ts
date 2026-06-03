@@ -12,18 +12,15 @@ export class PoliPageExceptionFilter implements ExceptionFilter {
   catch(err: PoliPageError, host: ArgumentsHost): void {
     const res = host.switchToHttp().getResponse<ResponseLike>()
 
-    const isNetwork = err.isNetworkError()
-    const status = !isNetwork && typeof err.status === 'number' && err.status >= 400 && err.status < 600
-      ? err.status
-      : 502
-
-    const code = isNetwork ? 'NETWORK_ERROR' : err.code
+    const payload = err.toPayload()
+    const status = payload.status ?? 500
 
     res.setHeader('Cache-Control', 'no-store, private')
     res.status(status).json({
-      code,
-      message: err.message,
-      requestId: err.requestId ?? null,
+      code: payload.code,
+      message: payload.message,
+      status,
+      requestId: payload.requestId,
     })
   }
 }
