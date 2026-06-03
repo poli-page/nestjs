@@ -1,12 +1,28 @@
 # @poli-page/nestjs
 
-[![CI](https://github.com/poli-page/nestjs/actions/workflows/ci.yml/badge.svg)](https://github.com/poli-page/nestjs/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/%40poli-page%2Fnestjs.svg)](https://www.npmjs.com/package/@poli-page/nestjs)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+> Render Poli Page documents from NestJS controllers.
 
-The official NestJS module for [Poli Page](https://poli.page) — a thin idiomatic veneer over [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk) that turns PDF rendering into a one-line controller method. Global module, injectable SDK client, `StreamableFile`-flavoured PDF responses, RFC 5987 filename encoding, and typed `PoliPageError → HTTP` mapping included.
+## About
 
-> **Pre-release status.** Neither `@poli-page/nestjs` nor `@poli-page/sdk@1.x` is on npm yet — the install command below is the eventual shape, not what works today. CI is red until both packages are published. For local development, see [`CLAUDE.md` §9](./CLAUDE.md) for the workspace / `npm link` setup.
+This package wires Poli Page into the Nest DI container. You get a `@Global()` `PoliPageModule` with `forRoot` / `forRootAsync` registration, an injectable `PoliPageService` facade over [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk), response types for PDF and HTML preview routes, and an opt-in exception filter that maps SDK errors to typed HTTP responses.
+
+**When to use this:**
+
+- You want `@InjectPoliPage()` or `PoliPageService` available in any controller or provider.
+- You want `forRootAsync` integration with `@nestjs/config`'s `ConfigService`.
+- You want PDF responses with the correct `Content-Type`, `Cache-Control`, and RFC 5987 filename headers without writing them by hand.
+
+**When not to:**
+
+- You're not on NestJS — use `@poli-page/sdk` directly.
+- You need a Fastify-tuned code path; Express is the platform we test, Fastify is unverified.
+
+## Requirements
+
+- Node.js `>=20.18.0`
+- NestJS `^10` or `^11`
+- `reflect-metadata` `^0.1.13` or `^0.2.0` and `rxjs` `^7.8.0` (Nest peers)
+- A Poli Page API key — get one at [poli.page/dashboard](https://poli.page/dashboard)
 
 ## Install
 
@@ -14,11 +30,21 @@ The official NestJS module for [Poli Page](https://poli.page) — a thin idiomat
 npm install @poli-page/nestjs @poli-page/sdk
 ```
 
+Set the API key in your environment:
+
+```bash
+# .env
+POLI_PAGE_API_KEY=pp_test_xxx
+```
+
+Nest has no project-level CLI hook, so the smoke test is booting the example app (see [Example app](#example-app)) or running your own `nest start`.
+
 ## Quick start
 
-`app.module.ts`:
+Register the module, then return a PDF from a controller.
 
 ```ts
+// src/app.module.ts
 import { Module } from '@nestjs/common'
 import { PoliPageModule } from '@poli-page/nestjs'
 
@@ -32,9 +58,8 @@ import { PoliPageModule } from '@poli-page/nestjs'
 export class AppModule {}
 ```
 
-`invoice.controller.ts`:
-
 ```ts
+// src/invoice.controller.ts
 import { Controller, Get, Param } from '@nestjs/common'
 import { PoliPageService, PoliPagePdfFile } from '@poli-page/nestjs'
 
@@ -55,11 +80,24 @@ export class InvoiceController {
 }
 ```
 
-`PoliPagePdfFile` defaults `Content-Type: application/pdf`, `Cache-Control: no-store, private`, `X-Content-Type-Options: nosniff`, and RFC 5987-encodes non-ASCII filenames.
+## Configuration
 
-## `PoliPageModule.forRootAsync()` with `ConfigService`
+You pass options to `forRoot` (or return them from `forRootAsync`). The module validates them at bootstrap.
+
+| Option | Default | Description |
+|---|---|---|
+| `apiKey` | — | Required. Must start with `pp_test_` or `pp_live_`. |
+| `baseUrl` | SDK default | Override the API host (e.g. `https://api-develop.poli.page`). |
+| `timeout` | SDK default | Per-request timeout in ms, in `(0, 600_000]`. |
+| `maxRetries` | SDK default | Integer in `[0, 10]`. |
+| `retryDelay` | SDK default | Base retry delay in ms, in `[0, 30_000]`. |
+| `onRequest` / `onResponse` / `onRetry` / `onError` | — | Lifecycle callbacks passed through to the SDK. |
+| `registerGlobalExceptionFilter` | `false` | When `true`, registers `PoliPageExceptionFilter` via `APP_FILTER`. |
+
+### `forRootAsync` with `ConfigService`
 
 ```ts
+// src/app.module.ts
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { PoliPageModule } from '@poli-page/nestjs'
@@ -74,146 +112,92 @@ import { PoliPageModule } from '@poli-page/nestjs'
         apiKey: config.getOrThrow<string>('POLI_PAGE_API_KEY'),
         baseUrl: config.get<string>('POLI_PAGE_BASE_URL'),
       }),
+      registerGlobalExceptionFilter: true,
     }),
   ],
 })
 export class AppModule {}
 ```
 
-`useClass` and `useExisting` patterns are also supported — see the [tests](./tests/unit/poli-page.module.forRootAsync.test.ts) for examples.
+`useClass` and `useExisting` follow the same `PoliPageOptionsFactory` shape Nest uses elsewhere. Put `registerGlobalExceptionFilter` at the top level of the async options object — the flag is read at registration time, before your factory runs.
 
-## API surface
+## API at a glance
 
-### `PoliPageService`
+| Symbol | Purpose |
+|---|---|
+| `PoliPageModule` | `@Global()` dynamic module — `forRoot` / `forRootAsync` registration. |
+| `PoliPageService` | Injectable facade exposing `.client`, `.render`, `.documents`. |
+| `@InjectPoliPage()` | Parameter decorator that injects the raw `PoliPage` SDK client. |
+| `POLI_PAGE_CLIENT_TOKEN` | DI token the SDK client is bound to (for custom providers). |
+| `PoliPagePdfFile` | `StreamableFile` subclass with PDF defaults and RFC 5987 filenames. |
+| `previewResponse()` | Helper returning `{ html, contentType, cacheControl }` for HTML preview routes. |
+| `PoliPageExceptionFilter` | `@Catch(PoliPageError)` filter mapping SDK errors to JSON HTTP responses. |
 
-The facade your controllers and services depend on. Exposes the underlying SDK client plus its two namespaces as getters.
+Full reference: [docs/api.md](docs/api.md).
 
-```ts
-constructor(private readonly poliPage: PoliPageService) {}
+## Errors
 
-await this.poliPage.render.pdf(...)        // sugar for service.client.render.pdf
-await this.poliPage.documents.get(...)     // sugar for service.client.documents.get
-this.poliPage.client                       // the underlying PoliPage instance
-```
+The SDK exposes a single `PoliPageError` class with predicates and codes rather than separate per-category classes. The taxonomy below maps to the predicates `PoliPageError` already provides:
 
-### `@InjectPoliPage()`
+- **Auth** — `err.isAuthError()` (HTTP 401/403).
+- **Rate limit** — `err.isRateLimitError()` (HTTP 429).
+- **Request rejected** — render-side validation and processing errors surface with `err.code` values such as `VALIDATION_ERROR`, `INVALID_VERSION_FORMAT`, `INTERNAL_ERROR`.
+- **Network / transport** — `err.isNetworkError()` (`code: 'network_error'` or `'timeout'`, no `status`).
 
-If you'd rather depend on the raw SDK client instead of the facade:
-
-```ts
-import { InjectPoliPage } from '@poli-page/nestjs'
-import type { PoliPage } from '@poli-page/sdk'
-
-constructor(@InjectPoliPage() private readonly client: PoliPage) {}
-```
-
-### `PoliPagePdfFile`
-
-`StreamableFile` subclass with PDF-flavoured defaults. Accepts `Uint8Array`, `Buffer`, Node `Readable`, or Web `ReadableStream<Uint8Array>`.
+Handle them in a controller:
 
 ```ts
-new PoliPagePdfFile(bytes, {
-  filename: 'invoice.pdf',
-  inline: true,                            // attachment when false (default)
-  cacheControl: 'public, max-age=60',      // 'no-store, private' by default
-})
-```
+// src/invoice.controller.ts
+import { PoliPageError } from '@poli-page/sdk'
 
-### `previewResponse()`
-
-Plain object with the right `contentType` and `cacheControl` for HTML preview routes. Framework-agnostic — spread it into whatever response shape your handler returns.
-
-```ts
-@Get('preview')
-@Header('Content-Type', 'text/html; charset=utf-8')
-@Header('Cache-Control', 'no-store, private')
-async preview(): Promise<string> {
-  const result = await this.poliPage.render.preview({ ... })
-  return previewResponse(result.html).html
+try {
+  await this.poliPage.render.pdf(input)
+} catch (err) {
+  if (err instanceof PoliPageError) {
+    if (err.isAuthError())      throw new UnauthorizedException()
+    if (err.isRateLimitError()) throw new HttpException('Slow down', 429)
+    if (err.isNetworkError())   throw new HttpException('Upstream unreachable', 502)
+  }
+  throw err
 }
 ```
 
-### `PoliPageExceptionFilter`
-
-`@Catch(PoliPageError)` — narrow on purpose. Maps SDK errors to typed JSON HTTP responses:
-
-| SDK error | HTTP status | Body |
-|---|---|---|
-| 4xx | same | `{ code, message, requestId }` |
-| 5xx | same | `{ code, message, requestId }` |
-| `network_error` / `timeout` (no status) | 502 | `{ code: 'NETWORK_ERROR', message, requestId: null }` |
-
-Anything that isn't a `PoliPageError` propagates unchanged to Nest's default exception handler — generic exception swallowing destroys observability.
-
-Two opt-in registration patterns:
-
-```ts
-// 1. via the module
-PoliPageModule.forRoot({
-  apiKey: ...,
-  registerGlobalExceptionFilter: true,
-})
-
-// 2. explicit, in main.ts
-import { PoliPageExceptionFilter } from '@poli-page/nestjs'
-app.useGlobalFilters(new PoliPageExceptionFilter())
-```
-
-For `forRootAsync`, put `registerGlobalExceptionFilter: true` at the top level of the async options object (next to `useFactory`/`useClass`/`useExisting`), not inside the factory's return value — the flag is read at registration time, before the factory runs.
-
-## Lifecycle hooks
-
-`onRequest`, `onResponse`, `onRetry`, `onError` are passed straight through to the SDK constructor. Bridge them to a Nest `EventEmitter2` (or any observability sink) inside `useFactory`:
-
-```ts
-PoliPageModule.forRootAsync({
-  inject: [EventEmitter2],
-  useFactory: (events: EventEmitter2) => ({
-    apiKey: process.env.POLI_PAGE_API_KEY!,
-    onRetry: (e) => events.emit('poli-page.retry', e),
-    onError: (e) => events.emit('poli-page.error', e),
-  }),
-})
-```
+Or register `PoliPageExceptionFilter` once and skip the boilerplate — 4xx/5xx pass through unchanged and network/timeout becomes a 502 with `code: 'NETWORK_ERROR'`. The filter is `@Catch(PoliPageError)` on purpose; other throws propagate to Nest's default handler.
 
 ## Example app
 
-A fully working Nest 11 demo lives in [`example-app/`](./example-app/) — nine routes covering every SDK demo step (`render.pdf`, `render.pdfStream`, `render.preview`, `documents.create`, `documents.get` redirect, `documents.preview`, `documents.thumbnails`, `documents.delete`, and an `INVALID_VERSION_FORMAT` triggering route), plus an interactive dashboard at `/` and a standalone `npm run render-to-file` script.
+A NestJS 11 app at [`example-app/`](./example-app/) covers the full SDK surface: `render.pdf`, `render.pdfStream`, `render.preview`, `documents.create`, `documents.get` redirect, `documents.preview`, `documents.thumbnails`, `documents.delete`, plus a route that triggers `INVALID_VERSION_FORMAT` and a standalone `render-to-file` script. A demo dashboard at `/` exercises each route interactively.
 
 ```bash
 cd example-app
 npm install
 npm run start:dev
-# → http://localhost:3000
+# http://localhost:3000
 ```
 
-## Environment variables
+## Going further
 
-The module itself reads no env vars — your app does, and passes them to `forRoot` / `forRootAsync`. By convention:
+- [docs/api.md](docs/api.md) — Full API reference for every exported symbol.
+- [docs/configuration.md](docs/configuration.md) — `forRootAsync` patterns (`useFactory`, `useClass`, `useExisting`) in depth.
+- [docs/exception-filter.md](docs/exception-filter.md) — How `PoliPageExceptionFilter` maps each error category to HTTP.
+- [docs/streaming.md](docs/streaming.md) — Returning `render.pdfStream` results through `PoliPagePdfFile`.
+- [docs/events.md](docs/events.md) — Bridging `onRequest` / `onResponse` / `onRetry` / `onError` to `EventEmitter2`.
+- [docs/testing.md](docs/testing.md) — Overriding the client in `Test.createTestingModule()`.
 
-| Variable | Notes |
-|---|---|
-| `POLI_PAGE_API_KEY` | Must start with `pp_test_` or `pp_live_` |
-| `POLI_PAGE_BASE_URL` | Set to `https://api-develop.poli.page` for the dev environment |
-| `POLI_PAGE_TIMEOUT` | milliseconds — passed to the SDK |
-| `POLI_PAGE_MAX_RETRIES` | integer — passed to the SDK |
-| `POLI_PAGE_RETRY_DELAY` | milliseconds — passed to the SDK |
-
-Wire whichever you use through `@nestjs/config`'s `ConfigService`, `process.env`, or your own configuration provider.
+These topic files are forthcoming; until they land, the source under `src/` and the example app are the reference.
 
 ## Compatibility
 
-| | Range |
-|---|---|
-| Node | `>=20.18.0` |
-| NestJS | `^10 || ^11` — CI matrix covers both |
-| Platform | Express (tested); Fastify should work but not in CI for v0.1 |
-| Module format | CommonJS |
+| Package | NestJS | Node |
+|---|---|---|
+| `0.1.x` | `^10` or `^11` | `>=20.18.0` |
+
+Express is the tested platform. `StreamableFile` is platform-agnostic, so Fastify is expected to work but is not in the CI matrix for `0.1`. New NestJS majors land within one minor of upstream release.
 
 ## Contributing
 
-See [`CLAUDE.md`](./CLAUDE.md) for the day-to-day working agreement: TDD discipline, "fix root causes, never workaround", strict TypeScript, and the rule that the SDK owns HTTP / retry / error mapping.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT — see [`LICENSE`](./LICENSE).
+MIT — see [LICENSE](LICENSE).
