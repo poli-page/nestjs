@@ -8,13 +8,15 @@ const apiKey = process.env.POLI_PAGE_API_KEY
 const skip = apiKey === undefined || !apiKey.startsWith('pp_test_')
 const describeMaybe = skip ? describe.skip : describe
 
-describeMaybe('render welcome against develop API', () => {
+describeMaybe('render welcome against live API', () => {
   it('resolves the module-provided PoliPage and renders a PDF', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
         PoliPageModule.forRoot({
           apiKey: apiKey!,
-          baseUrl: 'https://api-develop.poli.page',
+          ...(process.env.POLI_PAGE_TEST_BASE_URL
+            ? { baseUrl: process.env.POLI_PAGE_TEST_BASE_URL }
+            : {}),
         }),
       ],
     }).compile()

@@ -38,7 +38,7 @@ describe('validatePoliPageOptions', () => {
 
   it('accepts valid baseUrl', () => {
     expect(() => validatePoliPageOptions({
-      apiKey: 'pp_test_x', baseUrl: 'https://api-develop.poli.page',
+      apiKey: 'pp_test_x', baseUrl: 'https://api.example.com',
     })).not.toThrow()
   })
 })

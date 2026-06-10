@@ -87,7 +87,7 @@ You pass options to `forRoot` (or return them from `forRootAsync`). The module v
 | Option | Default | Description |
 |---|---|---|
 | `apiKey` | — | Required. Must start with `pp_test_` or `pp_live_`. |
-| `baseUrl` | SDK default | Override the API host (e.g. `https://api-develop.poli.page`). |
+| `baseUrl` | SDK default | Override the API host. |
 | `timeout` | SDK default | Per-request timeout in ms, in `(0, 600_000]`. |
 | `maxRetries` | SDK default | Integer in `[0, 10]`. |
 | `retryDelay` | SDK default | Base retry delay in ms, in `[0, 30_000]`. |
