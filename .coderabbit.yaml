@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit config for poli-page repos. PRs here are mostly opened and fixed by automated agents
+# (the poli-page auto loop and issue pipeline), which read CodeRabbit's findings and its commit status.
+language: en-US
+early_access: false
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  allow_author_approval: true
+  # The summary goes in the walkthrough, never in the PR description: the merge gate reads the description.
+  high_level_summary: false
+  high_level_summary_in_walkthrough: true
+  review_status: true
+  review_details: false
+  # The loop decides "reviewed this head" from the CodeRabbit commit status ("Review completed").
+  review_progress: true
+  commit_status: true
+  fail_commit_status: false
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  # PR labels are the closed issues' labels; CodeRabbit only suggests.
+  auto_apply_labels: false
+  suggested_reviewers: true
+  auto_assign_reviewers: false
+  in_progress_fortune: false
+  poem: false
+  enable_prompt_for_ai_agents: true
+  abort_on_close: true
+  disable_cache: false
+  slop_detection:
+    enabled: true
+    include_all_authors: false
+  auto_review:
+    enabled: true
+    drafts: false
+    # Every push of a fix round must be reviewed, and never auto-paused (the loop allows up to 5 rounds).
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 0
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+  path_filters:
+    - "!**/package-lock.json"
+    - "!**/dist/**"
+    - "!**/coverage/**"
+  path_instructions:
+    - path: "src/**"
+      instructions: >-
+        This is the published @poli-page/nestjs module. Keep the public API (exports in src/index.ts, module options,
+        service methods, decorator, response helpers) consistent with the other poli-page SDKs and the API spec; flag
+        breaking changes that are not accompanied by a major version bump and a CHANGELOG entry. Check idiomatic NestJS
+        usage (DI tokens, forRoot/forRootAsync, exception filters) and that errors keep the `{ error: { code } }` shape.
+    - path: "tests/**"
+      instructions: >-
+        Every public method, option and response helper needs a unit test. Integration tests under tests/integration
+        run against a real API and must read credentials from environment variables, never hardcode them.
+    - path: "example-app/**"
+      instructions: >-
+        Sample code that customers copy: it must be correct, idiomatic NestJS, and read the API key from an environment
+        variable (no secrets committed). Flag anything that would be unsafe or misleading when copied into a real app.
+    - path: "README.md"
+      instructions: >-
+        Check that documented options, imports and code samples match the current src/ API and the example-app.
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns: []
