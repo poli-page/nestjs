@@ -55,7 +55,7 @@ reviews:
         This is the published @poli-page/nestjs module. Keep the public API (exports in src/index.ts, module options,
         service methods, decorator, response helpers) consistent with the other poli-page SDKs and the API spec; flag
         breaking changes that are not accompanied by a major version bump and a CHANGELOG entry. Check idiomatic NestJS
-        usage (DI tokens, forRoot/forRootAsync, exception filters) and that errors keep the `{ error: { code } }` shape.
+        usage (DI tokens, forRoot/forRootAsync, exception filters) and that errors keep the `{ error: CODE_STRING, detail?, issues? } (flat, API spec §4.1)` shape.
     - path: "tests/**"
       instructions: >-
         Every public method, option and response helper needs a unit test. Integration tests under tests/integration
