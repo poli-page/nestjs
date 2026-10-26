@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, it, expect, jest } from '@jest/globals'
 import { Logger } from '@nestjs/common'
 import { validatePoliPageOptions } from '../../src/validation'
-import { MALFORMED_KEYS, SANDBOX_KEY, SECRET, WELL_FORMED_KEYS } from './fixtures/api-keys'
+import {
+  LONGEST_SHOWN_ENV,
+  MALFORMED_KEYS,
+  SANDBOX_KEY,
+  SECRET,
+  TOO_LONG_ENV,
+  WELL_FORMED_KEYS,
+} from './fixtures/api-keys'
 
 describe('validatePoliPageOptions', () => {
   let warn: jest.SpiedFunction<Logger['warn']>
@@ -46,9 +53,17 @@ describe('validatePoliPageOptions', () => {
     ['pp_sandbox_x', 'pp_sandbox_'],
     [`pp_Sandbox_${SECRET}`, 'pp_Sandbox_'],
     [`pp_a--b_${SECRET}`, 'pp_a--b_'],
+    [`pp_${LONGEST_SHOWN_ENV}_x`, `pp_${LONGEST_SHOWN_ENV}_`],
   ])('names the pp_{env}_ part of %s in the warning', (key, prefix) => {
     validatePoliPageOptions({ apiKey: key })
     expect(String(warn.mock.calls[0]?.[0])).toContain(prefix)
+  })
+
+  it('does not name a pp_{env}_ part whose env is longer than 20 characters', () => {
+    validatePoliPageOptions({ apiKey: `pp_${TOO_LONG_ENV}_${SECRET}` })
+    const message = String(warn.mock.calls[0]?.[0])
+    expect(message).not.toContain(`pp_${TOO_LONG_ENV}_`)
+    expect(message).toContain('a value without a pp_{env}_ prefix')
   })
 
   it.each([

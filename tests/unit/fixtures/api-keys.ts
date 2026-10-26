@@ -2,6 +2,10 @@ export const SECRET = '0123456789abcdef0123456789abcdef'
 
 export const SANDBOX_KEY = `pp_sandbox_${SECRET}`
 
+// The warning shows the `pp_{env}_` part only up to this `{env}` length.
+export const LONGEST_SHOWN_ENV = 'a'.repeat(20)
+export const TOO_LONG_ENV = 'a'.repeat(21)
+
 export const WELL_FORMED_KEYS = [SANDBOX_KEY, `pp_live_${SECRET}`, `pp_eu-prod_${SECRET}`]
 
 export const MALFORMED_KEYS = [
@@ -9,7 +13,7 @@ export const MALFORMED_KEYS = [
   `pp_Sandbox_${SECRET}`,
   `pp_2fa_${SECRET}`,
   `pp_a--b_${SECRET}`,
-  `pp_${'a'.repeat(21)}_${SECRET}`,
+  `pp_${TOO_LONG_ENV}_${SECRET}`,
   `pp_${SECRET}_${SECRET}`,
   `sk_live_${SECRET}`,
 ]
