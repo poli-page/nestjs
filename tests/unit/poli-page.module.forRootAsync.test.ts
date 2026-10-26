@@ -1,10 +1,11 @@
-import { afterEach, describe, it, expect } from '@jest/globals'
+import { afterEach, describe, it, expect, jest } from '@jest/globals'
 import { Test, type TestingModule } from '@nestjs/testing'
-import { Injectable, Module } from '@nestjs/common'
+import { Injectable, Logger, Module } from '@nestjs/common'
 import { PoliPage } from '@poli-page/sdk'
 import { PoliPageModule } from '../../src/poli-page.module'
 import { POLI_PAGE_CLIENT_TOKEN } from '../../src/poli-page.tokens'
 import type { PoliPageOptionsFactory, PoliPageModuleOptions } from '../../src/poli-page.options'
+import { MALFORMED_KEYS, SANDBOX_KEY, SECRET, WELL_FORMED_KEYS } from './fixtures/api-keys'
 
 describe('PoliPageModule.forRootAsync', () => {
   let moduleRef: TestingModule | undefined
@@ -12,13 +13,14 @@ describe('PoliPageModule.forRootAsync', () => {
   afterEach(async () => {
     await moduleRef?.close()
     moduleRef = undefined
+    jest.restoreAllMocks()
   })
 
   it('resolves with useFactory + no inject', async () => {
     moduleRef = await Test.createTestingModule({
       imports: [
         PoliPageModule.forRootAsync({
-          useFactory: () => ({ apiKey: 'pp_test_factory' }),
+          useFactory: () => ({ apiKey: SANDBOX_KEY }),
         }),
       ],
     }).compile()
@@ -29,7 +31,7 @@ describe('PoliPageModule.forRootAsync', () => {
   it('resolves with useFactory + inject', async () => {
     @Injectable()
     class ConfigStub {
-      get apiKey(): string { return 'pp_test_from_config' }
+      get apiKey(): string { return SANDBOX_KEY }
     }
 
     @Module({ providers: [ConfigStub], exports: [ConfigStub] })
@@ -52,7 +54,7 @@ describe('PoliPageModule.forRootAsync', () => {
     @Injectable()
     class FactoryClass implements PoliPageOptionsFactory {
       createPoliPageOptions(): PoliPageModuleOptions {
-        return { apiKey: 'pp_test_class' }
+        return { apiKey: SANDBOX_KEY }
       }
     }
 
@@ -67,7 +69,7 @@ describe('PoliPageModule.forRootAsync', () => {
     @Injectable()
     class FactoryClass implements PoliPageOptionsFactory {
       createPoliPageOptions(): PoliPageModuleOptions {
-        return { apiKey: 'pp_test_existing' }
+        return { apiKey: SANDBOX_KEY }
       }
     }
 
@@ -91,12 +93,37 @@ describe('PoliPageModule.forRootAsync', () => {
     const promise = Test.createTestingModule({
       imports: [
         PoliPageModule.forRootAsync({
-          useFactory: () => ({ apiKey: 'sk_bad_prefix' }),
+          useFactory: () => ({ apiKey: '' }),
         }),
       ],
     }).compile()
 
-    await expect(promise).rejects.toThrow(/pp_test_|pp_live_/)
+    await expect(promise).rejects.toThrow(/apiKey/)
+  })
+
+  it.each(WELL_FORMED_KEYS)('boots with %s and no warning', async (key) => {
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+
+    moduleRef = await Test.createTestingModule({
+      imports: [PoliPageModule.forRootAsync({ useFactory: () => ({ apiKey: key }) })],
+    }).compile()
+
+    expect(moduleRef.get(POLI_PAGE_CLIENT_TOKEN)).toBeInstanceOf(PoliPage)
+    expect(warn).not.toHaveBeenCalled()
+  })
+
+  it.each(MALFORMED_KEYS)('boots with %s and exactly one warning that hides the secret', async (key) => {
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+
+    moduleRef = await Test.createTestingModule({
+      imports: [PoliPageModule.forRootAsync({ useFactory: () => ({ apiKey: key }) })],
+    }).compile()
+
+    expect(moduleRef.get(POLI_PAGE_CLIENT_TOKEN)).toBeInstanceOf(PoliPage)
+    expect(warn).toHaveBeenCalledTimes(1)
+    const message = String(warn.mock.calls[0]?.[0])
+    expect(message).not.toContain(key)
+    expect(message).not.toContain(SECRET)
   })
 
   it('supports async useFactory (Promise return)', async () => {
@@ -105,7 +132,7 @@ describe('PoliPageModule.forRootAsync', () => {
         PoliPageModule.forRootAsync({
           useFactory: async () => {
             await new Promise(r => setTimeout(r, 1))
-            return { apiKey: 'pp_test_async' }
+            return { apiKey: SANDBOX_KEY }
           },
         }),
       ],
@@ -116,7 +143,7 @@ describe('PoliPageModule.forRootAsync', () => {
 
   it('registers global filter when registerGlobalExceptionFilter:true', () => {
     const dyn = PoliPageModule.forRootAsync({
-      useFactory: () => ({ apiKey: 'pp_test_x' }),
+      useFactory: () => ({ apiKey: SANDBOX_KEY }),
       registerGlobalExceptionFilter: true,
     })
 

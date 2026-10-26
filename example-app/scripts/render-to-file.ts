@@ -15,7 +15,6 @@ async function main(): Promise<void> {
   const pdf = await client.render.pdf({
     project: 'getting-started',
     template: 'welcome',
-    version: '1.0.0',
     data: { name: 'renderToFile demo' },
   })
 

@@ -4,6 +4,12 @@ All notable changes to `@poli-page/nestjs` are documented here. Format follows [
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** API keys are `pp_{env}_{32 lowercase hex}` for any environment (`pp_sandbox_…`, `pp_live_…`, `pp_staging_…`). The module no longer rejects a key by prefix: a missing or empty `apiKey` still throws, and any other value that does not match the key format logs one warning at startup (showing at most its `pp_{env}_` part, never the secret) and boots, so the API answers with its own error.
+- **Breaking:** templates have no versions. Built against the `@poli-page/sdk` that drops `version` from the render input: re-exports `RenderInput` instead of `ProjectModeInput`, and no longer re-exports `InlineModeInput` or `PreviewResult` (`render.preview()` and inline templates are gone; `documents.preview(id)` stays).
+- Example app: renders `getting-started/welcome` with no `version`; `GET /errors/bad-version` is replaced by `GET /errors/not-found` (`404 TEMPLATE_NOT_FOUND`), and the `render.preview()` route and dashboard step are removed.
+
 ### Fixed
 
 - `PoliPagePdfFile` / `contentDisposition()`: the `Content-Disposition` filename is now escaped per RFC 6266 / RFC 9110 (`\` and `"` as quoted-pairs, ASCII fallback included) and stripped of control characters (CR/LF, TAB, DEL, C1), so a filename can no longer break the header or inject parameters.

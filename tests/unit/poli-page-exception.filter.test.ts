@@ -19,15 +19,15 @@ describe('PoliPageExceptionFilter', () => {
   it('maps a 4xx PoliPageError to same status with canonical JSON body', () => {
     const filter = new PoliPageExceptionFilter()
     const { host, res } = fakeHost()
-    const err = new PoliPageError('Bad version', 'INVALID_VERSION_FORMAT', 400, 'req_1')
+    const err = new PoliPageError('Template not found', 'TEMPLATE_NOT_FOUND', 404, 'req_1')
 
     filter.catch(err, host)
 
-    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.status).toHaveBeenCalledWith(404)
     expect(res.json).toHaveBeenCalledWith({
-      code: 'INVALID_VERSION_FORMAT',
-      message: 'Bad version',
-      status: 400,
+      code: 'TEMPLATE_NOT_FOUND',
+      message: 'Template not found',
+      status: 404,
       requestId: 'req_1',
     })
     expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, private')

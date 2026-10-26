@@ -10,7 +10,7 @@ import { ErrorController } from './errors/error.controller'
     PoliPageModule.forRootAsync({
       registerGlobalExceptionFilter: true,
       useFactory: () => ({
-        apiKey: process.env.POLI_PAGE_API_KEY ?? 'pp_test_missing_set_env',
+        apiKey: process.env.POLI_PAGE_API_KEY ?? 'pp_sandbox_missing_set_env',
         baseUrl: process.env.POLI_PAGE_BASE_URL,
       }),
     }),

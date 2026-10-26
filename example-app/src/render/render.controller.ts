@@ -1,11 +1,7 @@
 import { statSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { Controller, Get, Header, Post, Query } from '@nestjs/common'
-import {
-  PoliPageService,
-  PoliPagePdfFile,
-  previewResponse,
-} from '@poli-page/nestjs'
+import { Controller, Get, Header, Post } from '@nestjs/common'
+import { PoliPageService, PoliPagePdfFile } from '@poli-page/nestjs'
 import { renderToFile } from '@poli-page/sdk/node'
 
 @Controller('render')
@@ -19,7 +15,6 @@ export class RenderController {
     const bytes = await this.poliPage.render.pdf({
       project: 'getting-started',
       template: 'welcome',
-      version: '1.0.0',
       data: { name: 'World' },
     })
     return new PoliPagePdfFile(bytes, { filename: 'welcome.pdf', inline: true })
@@ -32,7 +27,6 @@ export class RenderController {
     const stream = await this.poliPage.render.pdfStream({
       project: 'getting-started',
       template: 'welcome',
-      version: '1.0.0',
       data: { name: 'World' },
     })
     return new PoliPagePdfFile(stream, { filename: 'welcome.pdf', inline: true })
@@ -53,27 +47,10 @@ export class RenderController {
       {
         project: 'getting-started',
         template: 'welcome',
-        version: '1.0.0',
         data: { name: 'renderToFile demo' },
       },
       output,
     )
     return { path: output, sizeBytes: statSync(output).size }
-  }
-
-  @Get('preview')
-  @Header('Content-Type', 'text/html; charset=utf-8')
-  @Header('Cache-Control', 'no-store, private')
-  @Header('X-Content-Type-Options', 'nosniff')
-  async preview(@Query('html') inlineHtml?: string): Promise<string> {
-    const result = inlineHtml !== undefined
-      ? await this.poliPage.render.preview({ template: inlineHtml, data: {} })
-      : await this.poliPage.render.preview({
-          project: 'getting-started',
-          template: 'welcome',
-          version: '1.0.0',
-          data: { name: 'World' },
-        })
-    return previewResponse(result.html).html
   }
 }

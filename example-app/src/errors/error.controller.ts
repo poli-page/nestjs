@@ -5,12 +5,12 @@ import { PoliPageService } from '@poli-page/nestjs'
 export class ErrorController {
   constructor(private readonly poliPage: PoliPageService) {}
 
-  @Get('bad-version')
-  async badVersion(): Promise<unknown> {
+  // Answers 404 TEMPLATE_NOT_FOUND through the global PoliPageExceptionFilter.
+  @Get('not-found')
+  async notFound(): Promise<unknown> {
     return this.poliPage.render.pdf({
       project: 'getting-started',
-      template: 'welcome',
-      version: 'not-a-version',
+      template: 'does-not-exist',
       data: {},
     })
   }

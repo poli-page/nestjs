@@ -13,7 +13,7 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@poli-page/nestjs": "file:..",
-    "@poli-page/sdk": "file:../../sdk-node",
+    "@poli-page/sdk": "file:../vendor/poli-page-sdk-0.9.0-73a26ab.tgz",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0"
   },

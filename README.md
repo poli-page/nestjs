@@ -34,8 +34,18 @@ Set the API key in your environment:
 
 ```bash
 # .env
-POLI_PAGE_API_KEY=pp_test_xxx
+POLI_PAGE_API_KEY=pp_sandbox_xxx
 ```
+
+A key is `pp_{env}_{32 lowercase hex}`, where `{env}` is the environment it belongs to. The key alone selects the environment, so a render never names a version:
+
+| Environment                           | Key            | Watermark | Counted |
+| ------------------------------------- | -------------- | --------- | ------- |
+| `sandbox` (every org)                 | `pp_sandbox_…` | yes       | no      |
+| `live` (every org, deletable on Pro+) | `pp_live_…`    | no        | yes     |
+| created on Pro+ (e.g. `staging`)      | `pp_staging_…` | no        | yes     |
+
+"Counted" means the render counts toward the organization's monthly PDF quota.
 
 Nest has no project-level CLI hook, so the smoke test is booting the example app (see [Example app](#example-app)) or running your own `nest start`.
 
@@ -72,7 +82,6 @@ export class InvoiceController {
     const bytes = await this.poliPage.render.pdf({
       project: 'billing',
       template: 'invoice',
-      version: '1.0.0',
       data: { invoiceId: id },
     })
     return new PoliPagePdfFile(bytes, { filename: `invoice-${id}.pdf` })
@@ -86,7 +95,7 @@ You pass options to `forRoot` (or return them from `forRootAsync`). The module v
 
 | Option | Default | Description |
 |---|---|---|
-| `apiKey` | — | Required. Must start with `pp_test_` or `pp_live_`. |
+| `apiKey` | — | Required, non-empty. Any other value is accepted: a key that does not match `pp_{env}_{32 hex}` logs one warning at startup (showing at most its `pp_{env}_` part) and the API answers it. |
 | `baseUrl` | SDK default | Override the API host. |
 | `timeout` | SDK default | Per-request timeout in ms, in `(0, 600_000]`. |
 | `maxRetries` | SDK default | Integer in `[0, 10]`. |
@@ -141,7 +150,7 @@ The SDK exposes a single `PoliPageError` class with predicates and codes rather 
 
 - **Auth** — `err.isAuthError()` (HTTP 401/403).
 - **Rate limit** — `err.isRateLimitError()` (HTTP 429).
-- **Request rejected** — render-side validation and processing errors surface with `err.code` values such as `VALIDATION_ERROR`, `INVALID_VERSION_FORMAT`, `INTERNAL_ERROR`.
+- **Request rejected** — render-side validation and processing errors surface with `err.code` values such as `VALIDATION_ERROR`, `TEMPLATE_NOT_FOUND`, `INTERNAL_ERROR`.
 - **Network / transport** — `err.isNetworkError()` (`code: 'network_error'` or `'timeout'`, no `status`).
 
 Handle them in a controller:
@@ -166,7 +175,9 @@ Or register `PoliPageExceptionFilter` once and skip the boilerplate — 4xx/5xx 
 
 ## Example app
 
-A NestJS 11 app at [`example-app/`](./example-app/) covers the full SDK surface: `render.pdf`, `render.pdfStream`, `render.preview`, `documents.create`, `documents.get` redirect, `documents.preview`, `documents.thumbnails`, `documents.delete`, plus a route that triggers `INVALID_VERSION_FORMAT` and a standalone `render-to-file` script. A demo dashboard at `/` exercises each route interactively.
+A NestJS 11 app at [`example-app/`](./example-app/) covers the full SDK surface: `render.pdf`, `render.pdfStream`, `render.document`, `documents.get` redirect, `documents.preview`, `documents.thumbnails`, `documents.delete`, plus a standalone `render-to-file` script. Every render uses the `getting-started` project's `welcome` template, which every organization has in `sandbox`. `GET /errors/not-found` renders the template `does-not-exist` and answers `404` with code `TEMPLATE_NOT_FOUND`, showing the error's `code`, `status`, `message` and `requestId` through `PoliPageExceptionFilter`. A demo dashboard at `/` exercises each route interactively.
+
+The app reads `POLI_PAGE_API_KEY` (a `pp_sandbox_…` key) and, optionally, `POLI_PAGE_BASE_URL`.
 
 ```bash
 cd example-app
