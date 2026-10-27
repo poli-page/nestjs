@@ -6,7 +6,7 @@ All notable changes to `@poli-page/nestjs` are documented here. Format follows [
 
 ### Changed
 
-- **Breaking:** API keys are `pp_{env}_{32 lowercase hex}` for any environment (`pp_sandbox_…`, `pp_live_…`, `pp_staging_…`). The module no longer rejects a key by prefix: a missing or empty `apiKey` still throws, and any other value that does not match the key format logs one warning at startup (showing at most its `pp_{env}_` part, only when `{env}` is a well-formed environment name, never the secret) and boots, so the API answers with its own error.
+- **Breaking:** API keys are `pp_{env}_{32 lowercase hex}` for any environment (`pp_sandbox_…`, `pp_live_…`, `pp_staging_…`). The module no longer rejects a key by prefix: a missing, empty or non-string `apiKey` still throws, and any other non-empty string that does not match the key format logs one warning at startup (showing at most its `pp_{env}_` part, only when `{env}` is a well-formed environment name, never the secret) and boots, so the API answers with its own error.
 - **Breaking:** templates have no versions. Built against the `@poli-page/sdk` that drops `version` from the render input: re-exports `RenderInput` instead of `ProjectModeInput`, and no longer re-exports `InlineModeInput` or `PreviewResult` (`render.preview()` and inline templates are gone; `documents.preview(id)` stays).
 - Example app: renders `getting-started/welcome` with no `version`; `GET /errors/bad-version` is replaced by `GET /errors/not-found` (`404 TEMPLATE_NOT_FOUND`), and the `render.preview()` route and dashboard step are removed.
 
