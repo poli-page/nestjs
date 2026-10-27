@@ -1,9 +1,12 @@
 import { Logger } from '@nestjs/common'
 import type { PoliPageModuleOptions } from './poli-page.options'
 
-const KEY_PATTERN = /^pp_(?=[a-z][a-z0-9-]{0,19}_)[a-z][a-z0-9]*(?:-[a-z0-9]+)*_[0-9a-f]{32}$/
-// At most the `pp_{env}_` part of a key may be logged: never the secret after it.
-const ENV_PREFIX = /^pp_[^_]{1,20}_/
+// The `pp_{env}_` part of the contract's key pattern. Only this part of a key
+// may be logged, and only when `{env}` follows the contract grammar (lowercase,
+// letter first, single inner hyphens, at most 20 characters): anything looser
+// could show secret material.
+const ENV_PREFIX = /^pp_(?=[a-z][a-z0-9-]{0,19}_)[a-z][a-z0-9]*(?:-[a-z0-9]+)*_/
+const KEY_PATTERN = new RegExp(`${ENV_PREFIX.source}[0-9a-f]{32}$`)
 
 const logger = new Logger('PoliPageModule')
 

@@ -6,7 +6,7 @@ import {
   MALFORMED_KEYS,
   SANDBOX_KEY,
   SECRET,
-  TOO_LONG_ENV,
+  UNSHOWN_ENV_KEYS,
   WELL_FORMED_KEYS,
 } from './fixtures/api-keys'
 
@@ -51,19 +51,19 @@ describe('validatePoliPageOptions', () => {
 
   it.each([
     ['pp_sandbox_x', 'pp_sandbox_'],
-    [`pp_Sandbox_${SECRET}`, 'pp_Sandbox_'],
-    [`pp_a--b_${SECRET}`, 'pp_a--b_'],
+    ['pp_eu-prod_x', 'pp_eu-prod_'],
     [`pp_${LONGEST_SHOWN_ENV}_x`, `pp_${LONGEST_SHOWN_ENV}_`],
   ])('names the pp_{env}_ part of %s in the warning', (key, prefix) => {
     validatePoliPageOptions({ apiKey: key })
-    expect(String(warn.mock.calls[0]?.[0])).toContain(prefix)
+    expect(String(warn.mock.calls[0]?.[0])).toContain(`(got ${prefix}…)`)
   })
 
-  it('does not name a pp_{env}_ part whose env is longer than 20 characters', () => {
-    validatePoliPageOptions({ apiKey: `pp_${TOO_LONG_ENV}_${SECRET}` })
+  it.each(UNSHOWN_ENV_KEYS)('shows no key text for %s, whose env is outside the contract grammar', (key) => {
+    validatePoliPageOptions({ apiKey: key })
     const message = String(warn.mock.calls[0]?.[0])
-    expect(message).not.toContain(`pp_${TOO_LONG_ENV}_`)
-    expect(message).toContain('a value without a pp_{env}_ prefix')
+    const env = key.slice('pp_'.length, key.indexOf('_', 'pp_'.length))
+    expect(message).toContain('(got a value without a pp_{env}_ prefix)')
+    expect(message).not.toContain(env)
   })
 
   it.each([
