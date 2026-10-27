@@ -1,12 +1,9 @@
 import { Logger } from '@nestjs/common'
 import type { PoliPageModuleOptions } from './poli-page.options'
 
-// The `pp_{env}_` part of the contract's key pattern. Only this part of a key
-// may be logged, and only when `{env}` follows the contract grammar (lowercase,
-// letter first, single inner hyphens, at most 20 characters): anything looser
-// could show secret material.
-const ENV_PREFIX = /^pp_(?=[a-z][a-z0-9-]{0,19}_)[a-z][a-z0-9]*(?:-[a-z0-9]+)*_/
-const KEY_PATTERN = new RegExp(`${ENV_PREFIX.source}[0-9a-f]{32}$`)
+// `pp_{env}_{32 hex}`, where `{env}` is lowercase, letter first, single inner
+// hyphens, at most 20 characters.
+const KEY_PATTERN = /^pp_(?=[a-z][a-z0-9-]{0,19}_)[a-z][a-z0-9]*(?:-[a-z0-9]+)*_[0-9a-f]{32}$/
 
 const logger = new Logger('PoliPageModule')
 
@@ -15,12 +12,12 @@ export function validatePoliPageOptions(options: PoliPageModuleOptions): void {
     throw new Error('PoliPageModuleOptions.apiKey is required.')
   }
   // The API is the only authority on keys: a key of an unexpected shape is
-  // reported once and sent anyway, so the API answers with its own error.
+  // reported once and sent anyway, so the API answers with its own error. The
+  // warning shows no part of the key, not even a `pp_{env}_` prefix: a
+  // mis-pasted secret fragment can look like an environment name.
   if (!KEY_PATTERN.test(options.apiKey)) {
-    const prefix = ENV_PREFIX.exec(options.apiKey)?.[0]
-    const shown = prefix === undefined ? 'a value without a pp_{env}_ prefix' : `${prefix}…`
     logger.warn(
-      `PoliPageModuleOptions.apiKey does not match pp_{env}_{32 hex} (got ${shown}). ` +
+      'PoliPageModuleOptions.apiKey does not match the expected format pp_{environment}_{32 lowercase hex characters}. ' +
         'Starting anyway; the Poli Page API decides whether the key is valid.',
     )
   }

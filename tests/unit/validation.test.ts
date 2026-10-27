@@ -1,14 +1,7 @@
 import { afterEach, beforeEach, describe, it, expect, jest } from '@jest/globals'
 import { Logger } from '@nestjs/common'
 import { validatePoliPageOptions } from '../../src/validation'
-import {
-  LONGEST_SHOWN_ENV,
-  MALFORMED_KEYS,
-  SANDBOX_KEY,
-  SECRET,
-  UNSHOWN_ENV_KEYS,
-  WELL_FORMED_KEYS,
-} from './fixtures/api-keys'
+import { expectNoKeyText, MALFORMED_KEYS, SANDBOX_KEY, WELL_FORMED_KEYS } from './fixtures/api-keys'
 
 describe('validatePoliPageOptions', () => {
   let warn: jest.SpiedFunction<Logger['warn']>
@@ -30,8 +23,9 @@ describe('validatePoliPageOptions', () => {
     expect(() => validatePoliPageOptions({})).toThrow(/apiKey/)
   })
 
-  it('throws when apiKey is empty', () => {
-    expect(() => validatePoliPageOptions({ apiKey: '' })).toThrow(/apiKey is required/)
+  it('throws when apiKey is empty, with a message that shows no key text', () => {
+    expect(() => validatePoliPageOptions({ apiKey: '' }))
+      .toThrow(/^PoliPageModuleOptions\.apiKey is required\.$/)
     expect(warn).not.toHaveBeenCalled()
   })
 
@@ -40,30 +34,14 @@ describe('validatePoliPageOptions', () => {
     expect(warn).not.toHaveBeenCalled()
   })
 
-  it.each(MALFORMED_KEYS)('accepts %s with one warning that hides the secret', (key) => {
+  it.each(MALFORMED_KEYS)('accepts %j with one warning that shows no key text', (key) => {
     expect(() => validatePoliPageOptions({ apiKey: key })).not.toThrow()
     expect(warn).toHaveBeenCalledTimes(1)
     const message = String(warn.mock.calls[0]?.[0])
-    expect(message).toMatch(/apiKey/)
-    expect(message).not.toContain(key)
-    expect(message).not.toContain(SECRET)
-  })
-
-  it.each([
-    ['pp_sandbox_x', 'pp_sandbox_'],
-    ['pp_eu-prod_x', 'pp_eu-prod_'],
-    [`pp_${LONGEST_SHOWN_ENV}_x`, `pp_${LONGEST_SHOWN_ENV}_`],
-  ])('names the pp_{env}_ part of %s in the warning', (key, prefix) => {
-    validatePoliPageOptions({ apiKey: key })
-    expect(String(warn.mock.calls[0]?.[0])).toContain(`(got ${prefix}…)`)
-  })
-
-  it.each(UNSHOWN_ENV_KEYS)('shows no key text for %s, whose env is outside the contract grammar', (key) => {
-    validatePoliPageOptions({ apiKey: key })
-    const message = String(warn.mock.calls[0]?.[0])
-    const env = key.slice('pp_'.length, key.indexOf('_', 'pp_'.length))
-    expect(message).toContain('(got a value without a pp_{env}_ prefix)')
-    expect(message).not.toContain(env)
+    expect(message).toContain(
+      'PoliPageModuleOptions.apiKey does not match the expected format pp_{environment}_{32 lowercase hex characters}.',
+    )
+    expectNoKeyText(message, key)
   })
 
   it.each([

@@ -95,7 +95,7 @@ You pass options to `forRoot` (or return them from `forRootAsync`). The module v
 
 | Option | Default | Description |
 |---|---|---|
-| `apiKey` | — | Required: a missing, empty or non-string value throws. Any other non-empty string is accepted: a key that does not match `pp_{env}_{32 hex}` logs one warning at startup (showing at most its `pp_{env}_` part, only when `{env}` is a well-formed environment name) and the API answers it. |
+| `apiKey` | — | Required: a missing, empty or non-string value throws. Any other non-empty string is accepted: a key that does not match `pp_{environment}_{32 lowercase hex characters}` logs one warning at startup that names the expected format and shows no part of the key, and the API answers it. |
 | `baseUrl` | SDK default | Override the API host. |
 | `timeout` | SDK default | Per-request timeout in ms, in `(0, 600_000]`. |
 | `maxRetries` | SDK default | Integer in `[0, 10]`. |

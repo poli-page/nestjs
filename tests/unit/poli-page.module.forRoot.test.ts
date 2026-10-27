@@ -6,7 +6,7 @@ import { PoliPageModule } from '../../src/poli-page.module'
 import { PoliPageService } from '../../src/poli-page.service'
 import { InjectPoliPage } from '../../src/poli-page.decorator'
 import { POLI_PAGE_CLIENT_TOKEN } from '../../src/poli-page.tokens'
-import { MALFORMED_KEYS, SANDBOX_KEY, SECRET, WELL_FORMED_KEYS } from './fixtures/api-keys'
+import { expectNoKeyText, MALFORMED_KEYS, SANDBOX_KEY, WELL_FORMED_KEYS } from './fixtures/api-keys'
 
 describe('PoliPageModule.forRoot', () => {
   let moduleRef: TestingModule | undefined
@@ -76,7 +76,7 @@ describe('PoliPageModule.forRoot', () => {
     expect(warn).not.toHaveBeenCalled()
   })
 
-  it.each(MALFORMED_KEYS)('boots with %s and exactly one warning that hides the secret', async (key) => {
+  it.each(MALFORMED_KEYS)('boots with %j and exactly one warning that shows no key text', async (key) => {
     const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
 
     moduleRef = await Test.createTestingModule({
@@ -85,9 +85,7 @@ describe('PoliPageModule.forRoot', () => {
 
     expect(moduleRef.get(POLI_PAGE_CLIENT_TOKEN)).toBeInstanceOf(PoliPage)
     expect(warn).toHaveBeenCalledTimes(1)
-    const message = String(warn.mock.calls[0]?.[0])
-    expect(message).not.toContain(key)
-    expect(message).not.toContain(SECRET)
+    expectNoKeyText(String(warn.mock.calls[0]?.[0]), key)
   })
 
   it('does not register global filter by default', async () => {
