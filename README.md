@@ -175,7 +175,7 @@ Or register `PoliPageExceptionFilter` once and skip the boilerplate — 4xx/5xx 
 
 ## Example app
 
-A NestJS 11 app at [`example-app/`](./example-app/) covers the full SDK surface: `render.pdf`, `render.pdfStream`, `render.document`, `documents.get` redirect, `documents.preview`, `documents.thumbnails`, `documents.delete`, plus a standalone `render-to-file` script. Every render uses the `getting-started` project's `welcome` template, which every organization has in `sandbox`. `GET /errors/not-found` renders the template `does-not-exist` and answers `404` with code `TEMPLATE_NOT_FOUND`, showing the error's `code`, `status`, `message` and `requestId` through `PoliPageExceptionFilter`. A demo dashboard at `/` exercises each route interactively.
+A NestJS 11 app at [`example-app/`](./example-app/) covers the full SDK surface: `render.pdf`, `render.pdfStream`, `render.document`, `documents.get` redirect, `documents.preview`, `documents.thumbnails`, `documents.delete`, plus a standalone `render-to-file` script. The successful render routes and the script use the `getting-started` project's `welcome` template, which every organization has in `sandbox`. `GET /errors/not-found` renders the template `does-not-exist` and answers `404` with code `TEMPLATE_NOT_FOUND`, showing the error's `code`, `status`, `message` and `requestId` through `PoliPageExceptionFilter`. A demo dashboard at `/` exercises each route interactively.
 
 The app reads `POLI_PAGE_API_KEY` (a `pp_sandbox_…` key) and, optionally, `POLI_PAGE_BASE_URL`.
 
