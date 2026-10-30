@@ -4,7 +4,7 @@
 
 ## About
 
-This package wires Poli Page into the Nest DI container. You get a `@Global()` `PoliPageModule` with `forRoot` / `forRootAsync` registration, an injectable `PoliPageService` facade over [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk), response types for PDF and HTML preview routes, and an opt-in exception filter that maps SDK errors to typed HTTP responses.
+This package wires Poli Page into the Nest DI container. You get a `@Global()` `PoliPageModule` with `forRoot` / `forRootAsync` registration, an injectable `PoliPageService` facade over [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk), response types for PDF and HTML preview routes, and an exception filter, registered by default, that answers SDK errors as JSON.
 
 **When to use this:**
 
@@ -21,6 +21,7 @@ This package wires Poli Page into the Nest DI container. You get a `@Global()` `
 
 - Node.js `>=20.18.0`
 - NestJS `^10` or `^11`
+- [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk) `^0.11.0` (installed with the module): environment keys, no template versions
 - `reflect-metadata` `^0.1.13` or `^0.2.0` and `rxjs` `^7.8.0` (Nest peers)
 - A Poli Page API key — get one at [poli.page/dashboard](https://poli.page/dashboard)
 
@@ -101,7 +102,7 @@ You pass options to `forRoot` (or return them from `forRootAsync`). The module v
 | `maxRetries` | SDK default | Integer in `[0, 10]`. |
 | `retryDelay` | SDK default | Base retry delay in ms, in `[0, 30_000]`. |
 | `onRequest` / `onResponse` / `onRetry` / `onError` | — | Lifecycle callbacks passed through to the SDK. |
-| `registerGlobalExceptionFilter` | `false` | When `true`, registers `PoliPageExceptionFilter` via `APP_FILTER`. |
+| `registerGlobalExceptionFilter` | `true` | Registers `PoliPageExceptionFilter` via `APP_FILTER` (see [Error handler](#error-handler)). `false` turns it off. |
 
 ### `forRootAsync` with `ConfigService`
 
@@ -121,14 +122,13 @@ import { PoliPageModule } from '@poli-page/nestjs'
         apiKey: config.getOrThrow<string>('POLI_PAGE_API_KEY'),
         baseUrl: config.get<string>('POLI_PAGE_BASE_URL'),
       }),
-      registerGlobalExceptionFilter: true,
     }),
   ],
 })
 export class AppModule {}
 ```
 
-`useClass` and `useExisting` follow the same `PoliPageOptionsFactory` shape Nest uses elsewhere. Put `registerGlobalExceptionFilter` at the top level of the async options object — the flag is read at registration time, before your factory runs.
+`useClass` and `useExisting` follow the same `PoliPageOptionsFactory` shape Nest uses elsewhere. To turn the error handler off with `forRootAsync`, put `registerGlobalExceptionFilter: false` at the top level of the async options object, not in the factory's result: the flag is read at registration time, before your factory runs.
 
 ## API at a glance
 
@@ -146,14 +146,40 @@ Full reference: [docs/api.md](docs/api.md).
 
 ## Errors
 
-The SDK exposes a single `PoliPageError` class with predicates and codes rather than separate per-category classes. The taxonomy below maps to the predicates `PoliPageError` already provides:
+The SDK exposes a single `PoliPageError` class with predicates and codes rather than separate per-category classes:
 
 - **Auth** — `err.isAuthError()` (HTTP 401/403).
 - **Rate limit** — `err.isRateLimitError()` (HTTP 429).
 - **Request rejected** — render-side validation and processing errors surface with `err.code` values such as `VALIDATION_ERROR`, `TEMPLATE_NOT_FOUND`, `INTERNAL_ERROR`.
 - **Network / transport** — `err.isNetworkError()` (`code: 'network_error'` or `'timeout'`, no `status`).
 
-Handle them in a controller:
+### Error handler
+
+`PoliPageModule` registers `PoliPageExceptionFilter` as a global filter by default. A `PoliPageError` that leaves a controller answers with the SDK's `err.toPayload()` as the JSON body (`Content-Type: application/json`, `Cache-Control: no-store, private`):
+
+```json
+{ "code": "TEMPLATE_NOT_FOUND", "message": "Template 'does-not-exist' not found in project 'getting-started'.", "status": 404, "requestId": "req_…" }
+```
+
+| Error | HTTP status | Body `status` |
+|---|---|---|
+| API error (4xx, 5xx) | the API's status | the API's status |
+| `network_error` | `503` | `503` |
+| `timeout` | `504` | `504` |
+| SDK error with no status (e.g. `aborted`) | `500` | `null` |
+
+`requestId` is the API's `x-request-id`, or `null` when there is none. The filter is `@Catch(PoliPageError)`: other throws reach Nest's default handler.
+
+To handle the errors yourself, turn it off:
+
+```ts
+PoliPageModule.forRoot({
+  apiKey: process.env.POLI_PAGE_API_KEY!,
+  registerGlobalExceptionFilter: false,
+})
+```
+
+You can then catch them in a controller, or register the filter on a narrower scope with `@UseFilters(PoliPageExceptionFilter)`:
 
 ```ts
 // src/invoice.controller.ts
@@ -165,13 +191,11 @@ try {
   if (err instanceof PoliPageError) {
     if (err.isAuthError())      throw new UnauthorizedException()
     if (err.isRateLimitError()) throw new HttpException('Slow down', 429)
-    if (err.isNetworkError())   throw new HttpException('Upstream unreachable', 502)
+    if (err.isNetworkError())   throw new HttpException('Upstream unreachable', 503)
   }
   throw err
 }
 ```
-
-Or register `PoliPageExceptionFilter` once and skip the boilerplate — 4xx/5xx pass through unchanged and network/timeout becomes a 502 with `code: 'NETWORK_ERROR'`. The filter is `@Catch(PoliPageError)` on purpose; other throws propagate to Nest's default handler.
 
 ## Example app
 
@@ -207,7 +231,17 @@ Express is the tested platform. `StreamableFile` is platform-agnostic, so Fastif
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+`npm run typecheck`, `npm run lint`, `npm test` and `npm run build` are what CI runs.
+
+### Contract tests
+
+`tests/contract/contract.test.ts` runs the integration cases (`impl.*`) of the [Poli Page API contract](https://github.com/poli-page/api-contract) against the example app, with its SDK pointed at a local mock API. CI runs them against the contract version pinned in `.github/workflows/ci.yml`. Locally, they are skipped unless you point `POLI_CONTRACT` at a `contract.json`:
+
+```bash
+POLI_CONTRACT=/path/to/contract.json npm test
+```
+
+`tests/contract-skip.json` lists the cases allowed to fail, each with its reason.
 
 ## License
 
