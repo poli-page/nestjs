@@ -19,6 +19,8 @@ export interface PoliPageModuleOptions {
   /**
    * Register `PoliPageExceptionFilter` as a global filter via `APP_FILTER`, so a
    * `PoliPageError` answers its `toPayload()` body. Default `true`; `false` turns it off.
+   * With `forRootAsync`, set it on the async options: returned by the factory, it is
+   * ignored with a warning.
    */
   registerGlobalExceptionFilter?: boolean
 }

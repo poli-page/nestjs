@@ -23,7 +23,7 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - name: Pin Nest major
-        run: npm install --no-save @nestjs/common@^${{ matrix.nest }} @nestjs/core@^${{ matrix.nest }} @nestjs/testing@^${{ matrix.nest }} @nestjs/platform-express@^${{ matrix.nest }}
+        run: npm install --no-save @nestjs/common@^${{ matrix.nest }} @nestjs/core@^${{ matrix.nest }} @nestjs/testing@^${{ matrix.nest }} @nestjs/platform-express@^${{ matrix.nest }} @nestjs/platform-fastify@^${{ matrix.nest }}
       - name: Typecheck
         run: npm run typecheck
       - name: Lint
