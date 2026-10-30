@@ -40,6 +40,7 @@ const config: Config = {
   collectCoverageFrom: ['src/**/*.ts'],
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
+  verbose: true,
   forceExit: true,
 }
 

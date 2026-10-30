@@ -15,7 +15,7 @@ This package wires Poli Page into the Nest DI container. You get a `@Global()` `
 **When not to:**
 
 - You're not on NestJS — use `@poli-page/sdk` directly.
-- You need a Fastify-tuned code path; Express is the platform we test, Fastify is unverified.
+- You need a Fastify-tuned code path; Express is the platform the example app and contract tests use (the error handler is also tested on Fastify).
 
 ## Requirements
 
@@ -128,7 +128,7 @@ import { PoliPageModule } from '@poli-page/nestjs'
 export class AppModule {}
 ```
 
-`useClass` and `useExisting` follow the same `PoliPageOptionsFactory` shape Nest uses elsewhere. To turn the error handler off with `forRootAsync`, put `registerGlobalExceptionFilter: false` at the top level of the async options object, not in the factory's result: the flag is read at registration time, before your factory runs.
+`useClass` and `useExisting` follow the same `PoliPageOptionsFactory` shape Nest uses elsewhere. To turn the error handler off with `forRootAsync`, put `registerGlobalExceptionFilter: false` at the top level of the async options object, not in the factory's result: the flag is read at registration time, before your factory runs. A factory that returns it gets a startup warning, and the value is ignored.
 
 ## API at a glance
 
@@ -169,6 +169,11 @@ The SDK exposes a single `PoliPageError` class with predicates and codes rather 
 | SDK error with no status (e.g. `aborted`) | `500` | `null` |
 
 `requestId` is the API's `x-request-id`, or `null` when there is none. The filter is `@Catch(PoliPageError)`: other throws reach Nest's default handler.
+
+- It answers through Nest's HTTP adapter, so it works on Express and Fastify.
+- It removes the PDF headers a route set before the error (`@Header('Content-Disposition', …)`, `Content-Length`), so the JSON is never saved as a PDF. If the response has already started, it destroys the connection instead: the body can no longer be replaced.
+- Outside HTTP (GraphQL resolvers, microservices, WebSocket gateways) it gives the error back unchanged: it rethrows it, or returns it as an error `Observable` to a microservice.
+- An error raised by a `render.pdfStream()` stream after the route returned (for example `DOWNLOAD_FAILED`) never reaches exception filters. `PoliPagePdfFile` handles it the same way: before the first byte it answers the `toPayload()` JSON without the PDF headers; after it, it destroys the connection, so a truncated PDF never looks complete.
 
 To handle the errors yourself, turn it off:
 
@@ -227,7 +232,7 @@ These topic files are forthcoming; until they land, the source under `src/` and 
 |---|---|---|
 | `0.1.x` | `^10` or `^11` | `>=20.18.0` |
 
-Express is the tested platform. `StreamableFile` is platform-agnostic, so Fastify is expected to work but is not in the CI matrix for `0.1`. New NestJS majors land within one minor of upstream release.
+Express is the tested platform. The error handler is also tested on Fastify; the rest of the package (`StreamableFile` is platform-agnostic) is expected to work there but is not covered by tests in `0.1`. New NestJS majors land within one minor of upstream release.
 
 ## Contributing
 
