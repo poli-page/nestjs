@@ -8,7 +8,6 @@ import { ErrorController } from './errors/error.controller'
 @Module({
   imports: [
     PoliPageModule.forRootAsync({
-      registerGlobalExceptionFilter: true,
       useFactory: () => ({
         apiKey: process.env.POLI_PAGE_API_KEY ?? 'pp_sandbox_missing_set_env',
         baseUrl: process.env.POLI_PAGE_BASE_URL,

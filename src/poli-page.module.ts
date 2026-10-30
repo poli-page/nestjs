@@ -24,9 +24,7 @@ export class PoliPageModule {
       inject: [POLI_PAGE_OPTIONS_TOKEN],
     }
 
-    const filterProviders: Provider[] = options.registerGlobalExceptionFilter
-      ? [{ provide: APP_FILTER, useClass: PoliPageExceptionFilter }]
-      : []
+    const filterProviders = exceptionFilterProviders(options.registerGlobalExceptionFilter)
 
     return {
       module: PoliPageModule,
@@ -48,9 +46,7 @@ export class PoliPageModule {
       inject: [POLI_PAGE_OPTIONS_TOKEN],
     }
 
-    const filterProviders: Provider[] = asyncOptions.registerGlobalExceptionFilter
-      ? [{ provide: APP_FILTER, useClass: PoliPageExceptionFilter }]
-      : []
+    const filterProviders = exceptionFilterProviders(asyncOptions.registerGlobalExceptionFilter)
 
     return {
       module: PoliPageModule,
@@ -104,6 +100,11 @@ export class PoliPageModule {
       'PoliPageModule.forRootAsync requires one of useFactory, useClass, or useExisting.',
     )
   }
+}
+
+/** The global `PoliPageExceptionFilter`, on unless the option is `false`. */
+function exceptionFilterProviders(register: boolean | undefined): Provider[] {
+  return register === false ? [] : [{ provide: APP_FILTER, useClass: PoliPageExceptionFilter }]
 }
 
 export function buildClient(opts: PoliPageModuleOptions): PoliPage {

@@ -1,11 +1,14 @@
 import { afterEach, describe, it, expect, jest } from '@jest/globals'
 import { Test, type TestingModule } from '@nestjs/testing'
+import { APP_FILTER } from '@nestjs/core'
 import { Injectable, Logger, Module } from '@nestjs/common'
 import { PoliPage } from '@poli-page/sdk'
 import { PoliPageModule } from '../../src/poli-page.module'
 import { PoliPageService } from '../../src/poli-page.service'
 import { InjectPoliPage } from '../../src/poli-page.decorator'
 import { POLI_PAGE_CLIENT_TOKEN } from '../../src/poli-page.tokens'
+import { PoliPageExceptionFilter } from '../../src/poli-page-exception.filter'
+import { appFilters } from './fixtures/providers'
 import { expectNoKeyText, MALFORMED_KEYS, SANDBOX_KEY, WELL_FORMED_KEYS } from './fixtures/api-keys'
 
 describe('PoliPageModule.forRoot', () => {
@@ -88,23 +91,31 @@ describe('PoliPageModule.forRoot', () => {
     expectNoKeyText(String(warn.mock.calls[0]?.[0]), key)
   })
 
-  it('does not register global filter by default', async () => {
-    moduleRef = await Test.createTestingModule({
-      imports: [PoliPageModule.forRoot({ apiKey: SANDBOX_KEY })],
-    }).compile()
+  it('registers PoliPageExceptionFilter as a global filter by default', () => {
+    const dyn = PoliPageModule.forRoot({ apiKey: SANDBOX_KEY })
 
-    expect(moduleRef).toBeDefined()
+    expect(appFilters(dyn.providers)).toEqual([
+      { provide: APP_FILTER, useClass: PoliPageExceptionFilter },
+    ])
   })
 
-  it('registers a global filter when registerGlobalExceptionFilter is true', () => {
+  it('registers the global filter when registerGlobalExceptionFilter is true', () => {
     const dyn = PoliPageModule.forRoot({
       apiKey: SANDBOX_KEY,
       registerGlobalExceptionFilter: true,
     })
 
-    const filterProvider = (dyn.providers ?? []).find(
-      (p: any) => typeof p === 'object' && p.provide?.toString().includes('APP_FILTER'),
-    )
-    expect(filterProvider).toBeDefined()
+    expect(appFilters(dyn.providers)).toEqual([
+      { provide: APP_FILTER, useClass: PoliPageExceptionFilter },
+    ])
+  })
+
+  it('registers no global filter when registerGlobalExceptionFilter is false', () => {
+    const dyn = PoliPageModule.forRoot({
+      apiKey: SANDBOX_KEY,
+      registerGlobalExceptionFilter: false,
+    })
+
+    expect(appFilters(dyn.providers)).toEqual([])
   })
 })
