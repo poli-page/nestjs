@@ -172,8 +172,8 @@ The SDK exposes a single `PoliPageError` class with predicates and codes rather 
 
 - It answers through Nest's HTTP adapter, so it works on Express and Fastify.
 - It removes the PDF headers a route set before the error (`@Header('Content-Disposition', …)`, `Content-Length`), so the JSON is never saved as a PDF. If the response has already started, it destroys the connection instead: the body can no longer be replaced.
-- Outside HTTP (GraphQL resolvers, microservices, WebSocket gateways) it gives the error back unchanged: it rethrows it, or returns it as an error `Observable` to a microservice.
-- An error raised by a `render.pdfStream()` stream after the route returned (for example `DOWNLOAD_FAILED`) never reaches exception filters. `PoliPagePdfFile` handles it the same way: before the first byte it answers the `toPayload()` JSON without the PDF headers; after it, it destroys the connection, so a truncated PDF never looks complete.
+- Outside HTTP it gives the error back: it rethrows it from GraphQL resolvers and WebSocket gateways, and passes it as is to a microservice transport, in an error `Observable` (the client then receives the serialised `PoliPageError`, not Nest's generic `Internal server error`).
+- An error raised by a `render.pdfStream()` stream after the route returned (for example `DOWNLOAD_FAILED`) never reaches exception filters. The answer is the same: before the first byte, the `toPayload()` JSON without the PDF headers; after it, the connection is destroyed, so a truncated PDF never looks complete. On Express `PoliPagePdfFile` answers it itself; on Fastify the stream error reaches the global filter, which answers it.
 
 To handle the errors yourself, turn it off:
 
