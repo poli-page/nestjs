@@ -14,6 +14,7 @@ import { isObservable, lastValueFrom } from 'rxjs'
 import request from 'supertest'
 import { PoliPageExceptionFilter } from '../../src/poli-page-exception.filter'
 import { PoliPageModule } from '../../src/poli-page.module'
+import { PoliPagePdfFile } from '../../src/responses/poli-page-pdf-file'
 import { SANDBOX_KEY } from './fixtures/api-keys'
 
 /** A Node response double: what the filter writes when it is built with `new`. */
@@ -181,6 +182,22 @@ class ThrowingController {
   }
 }
 
+/** A PDF stream that fails before its first chunk, like a failed render.pdfStream() download. */
+@Controller()
+class StreamController {
+  @Get('stream-early')
+  streamEarly(): PoliPagePdfFile {
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.error(
+          new PoliPageError('Failed to download PDF: network error', 'DOWNLOAD_FAILED'),
+        )
+      },
+    })
+    return new PoliPagePdfFile(stream, { filename: 'welcome.pdf' })
+  }
+}
+
 const NOT_FOUND_BODY = {
   code: 'TEMPLATE_NOT_FOUND',
   message: 'Template not found',
@@ -269,7 +286,7 @@ describe('PoliPageExceptionFilter registration (Fastify)', () => {
   async function start(): Promise<NestFastifyApplication> {
     const moduleRef = await Test.createTestingModule({
       imports: [PoliPageModule.forRoot({ apiKey: SANDBOX_KEY })],
-      controllers: [ThrowingController],
+      controllers: [ThrowingController, StreamController],
     }).compile()
     app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter(), {
       logger: false,
@@ -294,5 +311,19 @@ describe('PoliPageExceptionFilter registration (Fastify)', () => {
     expect(res.headers['content-type']).toMatch(/^application\/json/)
     expect(res.headers['content-disposition']).toBeUndefined()
     expect(res.json()).toEqual({ ...NOT_FOUND_BODY, requestId: 'req_pdf' })
+  })
+
+  it('answers a PDF stream error before the first byte without the PDF headers', async () => {
+    const res = await (await start()).inject({ method: 'GET', url: '/stream-early' })
+
+    expect(res.statusCode).toBe(500)
+    expect(res.headers['content-type']).toMatch(/^application\/json/)
+    expect(res.headers['content-disposition']).toBeUndefined()
+    expect(res.json()).toStrictEqual({
+      code: 'DOWNLOAD_FAILED',
+      message: 'Failed to download PDF: network error',
+      status: null,
+      requestId: null,
+    })
   })
 })

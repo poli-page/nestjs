@@ -18,8 +18,8 @@ import {
  * removed; when the response has already started, the connection is destroyed.
  *
  * It answers through Nest's HTTP adapter, so Express and Fastify both work.
- * Outside HTTP (GraphQL, microservices, WebSockets) it gives the error back
- * unchanged: rethrown, or as an error Observable for microservices.
+ * Outside HTTP it gives the error back: rethrown for GraphQL and WebSockets, or
+ * passed to a microservice transport as is, in an error Observable.
  *
  * `PoliPageModule` registers it globally unless `registerGlobalExceptionFilter`
  * is `false`.
@@ -50,13 +50,19 @@ export class PoliPageExceptionFilter implements ExceptionFilter {
   }
 }
 
-/** A target that answers through Nest's HTTP adapter (Express, Fastify). */
+/**
+ * A target that answers through Nest's HTTP adapter (Express, Fastify). Whether headers are sent
+ * is read from the Node response: Fastify's `isHeadersSent` means the reply has ended. Headers
+ * are removed from the platform response and from the Node response, where Fastify copies its
+ * headers before piping a stream.
+ */
 function adapterTarget(adapter: AbstractHttpAdapter, response: unknown): PoliPageErrorTarget {
+  const raw = rawResponse(response)
+  const node = isNodeResponseLike(raw) ? raw : undefined
   return {
-    headersSent: () => adapter.isHeadersSent(response) === true,
+    headersSent: () => (node !== undefined ? node.headersSent : adapter.isHeadersSent(response) === true),
     destroy: () => {
-      const raw = rawResponse(response)
-      if (isNodeResponseLike(raw)) raw.destroy()
+      node?.destroy()
     },
     removeHeader: (name) => {
       // Express responses and Fastify replies both have removeHeader().
@@ -64,6 +70,7 @@ function adapterTarget(adapter: AbstractHttpAdapter, response: unknown): PoliPag
         const remove: unknown = response.removeHeader
         if (typeof remove === 'function') remove.call(response, name)
       }
+      if (node !== undefined && node !== response && !node.headersSent) node.removeHeader(name)
     },
     setHeader: (name, value) => {
       adapter.setHeader(response, name, value)
