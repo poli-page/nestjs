@@ -11,8 +11,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { node: 18, nest: 10 }
-          - { node: 18, nest: 11 }
           - { node: 20, nest: 10 }
           - { node: 20, nest: 11 }
           - { node: 22, nest: 10 }

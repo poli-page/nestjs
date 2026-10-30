@@ -16,6 +16,10 @@ All notable changes to `@poli-page/nestjs` are documented here. Format follows [
 
 - Contract tests: CI runs the integration cases of the Poli Page API contract (v1.3.0) against the example app, and builds the example app.
 
+### Removed
+
+- Node 18 from the CI matrix: it is below the `>=20.18.0` engines floor of this package and of `@poli-page/sdk` 0.11.0, whose renders need the global `crypto` (Node 18 fails every render with a `TypeError`).
+
 ### Fixed
 
 - `PoliPagePdfFile` / `contentDisposition()`: the `Content-Disposition` filename is now escaped per RFC 6266 / RFC 9110 (`\` and `"` as quoted-pairs, ASCII fallback included) and stripped of control characters (CR/LF, TAB, DEL, C1), so a filename can no longer break the header or inject parameters.
