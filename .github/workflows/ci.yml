@@ -37,6 +37,8 @@ jobs:
           POLI_CONTRACT: ${{ steps.contract.outputs.path }}
       - name: Build
         run: npm run build
+      - name: Validate published types & manifest (attw + publint)
+        run: npm run lint:pack
 
   example-app:
     runs-on: ubuntu-latest
