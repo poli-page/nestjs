@@ -230,13 +230,15 @@ These topic files are forthcoming; until they land, the source under `src/` and 
 
 | Package | NestJS | Node |
 |---|---|---|
-| `0.1.x` | `^10` or `^11` | `>=20.18.0` |
+| `0.11.x` | `^10` or `^11` | `>=20.18.0` |
 
-Express is the tested platform. The error handler is also tested on Fastify; the rest of the package (`StreamableFile` is platform-agnostic) is expected to work there but is not covered by tests in `0.1`. New NestJS majors land within one minor of upstream release.
+Express is the tested platform. The error handler is also tested on Fastify; the rest of the package (`StreamableFile` is platform-agnostic) is expected to work there but is not covered by tests in `0.11`. New NestJS majors land within one minor of upstream release.
 
 ## Contributing
 
 `npm run typecheck`, `npm run lint`, `npm test` and `npm run build` are what CI runs.
+
+Releases are cut by pushing a `vX.Y.Z` tag; see [RELEASING.md](RELEASING.md).
 
 ### Contract tests
 
