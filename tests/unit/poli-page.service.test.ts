@@ -10,7 +10,6 @@ describe('PoliPageService', () => {
       render: {
         pdf: jest.fn(),
         pdfStream: jest.fn(),
-        preview: jest.fn(),
         document: jest.fn(),
       },
       documents: {

@@ -16,7 +16,12 @@ export interface PoliPageModuleOptions {
   onResponse?: (e: ResponseEvent) => void
   onRetry?: (e: RetryEvent) => void
   onError?: (err: PoliPageError) => void
-  /** Register PoliPageExceptionFilter as a global filter via APP_FILTER. Default false. */
+  /**
+   * Register `PoliPageExceptionFilter` as a global filter via `APP_FILTER`, so a
+   * `PoliPageError` answers its `toPayload()` body. Default `true`; `false` turns it off.
+   * With `forRootAsync`, set it on the async options: returned by the factory, it is
+   * ignored with a warning.
+   */
   registerGlobalExceptionFilter?: boolean
 }
 
@@ -29,5 +34,9 @@ export interface PoliPageModuleAsyncOptions extends Pick<ModuleMetadata, 'import
   useClass?: Type<PoliPageOptionsFactory>
   useExisting?: Type<PoliPageOptionsFactory>
   inject?: Array<Type<any> | string | symbol>
+  /**
+   * Register `PoliPageExceptionFilter` as a global filter via `APP_FILTER`. Default `true`;
+   * `false` turns it off. Read at registration time, before `useFactory` runs.
+   */
   registerGlobalExceptionFilter?: boolean
 }

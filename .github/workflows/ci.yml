@@ -11,8 +11,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { node: 18, nest: 10 }
-          - { node: 18, nest: 11 }
           - { node: 20, nest: 10 }
           - { node: 20, nest: 11 }
           - { node: 22, nest: 10 }
@@ -25,16 +23,38 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - name: Pin Nest major
-        run: npm install --no-save @nestjs/common@^${{ matrix.nest }} @nestjs/core@^${{ matrix.nest }} @nestjs/testing@^${{ matrix.nest }} @nestjs/platform-express@^${{ matrix.nest }}
+        run: npm install --no-save @nestjs/common@^${{ matrix.nest }} @nestjs/core@^${{ matrix.nest }} @nestjs/testing@^${{ matrix.nest }} @nestjs/platform-express@^${{ matrix.nest }} @nestjs/platform-fastify@^${{ matrix.nest }}
       - name: Typecheck
         run: npm run typecheck
-        if: hashFiles('tsconfig.json') != ''
       - name: Lint
         run: npm run lint
-        if: hashFiles('eslint.config.mjs') != ''
+      - name: API contract
+        id: contract
+        uses: poli-page/api-contract@0eba96c1ecf9a28b7e259f444f3ca5b7c059d5fd # v1.3.0
       - name: Test
         run: npm test
-        if: hashFiles('jest.config.ts') != ''
+        env:
+          POLI_CONTRACT: ${{ steps.contract.outputs.path }}
       - name: Build
         run: npm run build
-        if: hashFiles('nest-cli.json') != ''
+
+  example-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            example-app/package-lock.json
+      - run: npm ci
+      - name: Build the library
+        run: npm run build
+      - name: Install the example app
+        run: npm ci
+        working-directory: example-app
+      - name: Build the example app
+        run: npm run build
+        working-directory: example-app

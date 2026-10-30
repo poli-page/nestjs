@@ -4,6 +4,23 @@ All notable changes to `@poli-page/nestjs` are documented here. Format follows [
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** requires `@poli-page/sdk` `^0.11.0`, the first SDK release with environment keys and no template versions (both changes below).
+- **Breaking:** `PoliPageExceptionFilter` is registered globally by default (it was opt-in); `registerGlobalExceptionFilter: false` turns it off. It answers a `PoliPageError` with the SDK's `toPayload()` as the JSON body, `{ code, message, status, requestId }`, and the payload's `status` as the HTTP status: the API's status, `503` for `network_error`, `504` for `timeout`, or `500` for an SDK error with no status (the body keeps `status: null`). `Content-Type` is `application/json`. It removes the PDF headers a route set before the error (`Content-Disposition`, `Content-Length`), destroys the connection when the response has already started, answers through Nest's HTTP adapter (Express and Fastify), and outside HTTP gives the error back: rethrown for GraphQL and WebSockets, passed as is to a microservice transport. A `registerGlobalExceptionFilter` returned by a `forRootAsync` factory is ignored with a warning (it belongs at the top level of the async options).
+- `PoliPagePdfFile`: a `PoliPageError` raised by its stream (e.g. `DOWNLOAD_FAILED` from `render.pdfStream()`) before the first byte answers the `toPayload()` JSON without the PDF headers, instead of Nest's `400` text under `application/pdf`; after the first byte the connection is destroyed instead of ended, so a truncated PDF never looks complete.
+- **Breaking:** API keys are `pp_{env}_{32 lowercase hex}` for any environment (`pp_sandbox_…`, `pp_live_…`, `pp_staging_…`). The module no longer rejects a key by prefix: a missing, empty or non-string `apiKey` still throws, and any other non-empty string that does not match the key format logs one warning at startup (naming the expected format, showing no part of the key, not even its `pp_{env}_` prefix) and boots, so the API answers with its own error.
+- **Breaking:** templates have no versions. `@poli-page/sdk` 0.11.0 drops `version` from the render input: re-exports `RenderInput` instead of `ProjectModeInput`, and no longer re-exports `InlineModeInput` or `PreviewResult` (`render.preview()` and inline templates are gone; `documents.preview(id)` stays).
+- Example app: renders `getting-started/welcome` with no `version`; `GET /errors/bad-version` is replaced by `GET /errors/not-found` (`404 TEMPLATE_NOT_FOUND`), and the `render.preview()` route and dashboard step are removed.
+
+### Added
+
+- Contract tests: CI runs the integration cases of the Poli Page API contract (v1.3.0) against the example app, and builds the example app.
+
+### Removed
+
+- Node 18 from the CI matrix: it is below the `>=20.18.0` engines floor of this package and of `@poli-page/sdk` 0.11.0, whose renders need the global `crypto` (Node 18 fails every render with a `TypeError`).
+
 ### Fixed
 
 - `PoliPagePdfFile` / `contentDisposition()`: the `Content-Disposition` filename is now escaped per RFC 6266 / RFC 9110 (`\` and `"` as quoted-pairs, ASCII fallback included) and stripped of control characters (CR/LF, TAB, DEL, C1), so a filename can no longer break the header or inject parameters.

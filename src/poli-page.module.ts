@@ -1,4 +1,4 @@
-import { Module, Global, type DynamicModule, type Provider } from '@nestjs/common'
+import { Module, Global, Logger, type DynamicModule, type Provider } from '@nestjs/common'
 import { APP_FILTER } from '@nestjs/core'
 import { PoliPage, type PoliPageOptions } from '@poli-page/sdk'
 import { PoliPageService } from './poli-page.service'
@@ -24,9 +24,7 @@ export class PoliPageModule {
       inject: [POLI_PAGE_OPTIONS_TOKEN],
     }
 
-    const filterProviders: Provider[] = options.registerGlobalExceptionFilter
-      ? [{ provide: APP_FILTER, useClass: PoliPageExceptionFilter }]
-      : []
+    const filterProviders = exceptionFilterProviders(options.registerGlobalExceptionFilter)
 
     return {
       module: PoliPageModule,
@@ -43,14 +41,13 @@ export class PoliPageModule {
       provide: POLI_PAGE_CLIENT_TOKEN,
       useFactory: (opts: PoliPageModuleOptions): PoliPage => {
         validatePoliPageOptions(opts)
+        warnIfFactorySetsFilterFlag(opts)
         return buildClient(opts)
       },
       inject: [POLI_PAGE_OPTIONS_TOKEN],
     }
 
-    const filterProviders: Provider[] = asyncOptions.registerGlobalExceptionFilter
-      ? [{ provide: APP_FILTER, useClass: PoliPageExceptionFilter }]
-      : []
+    const filterProviders = exceptionFilterProviders(asyncOptions.registerGlobalExceptionFilter)
 
     return {
       module: PoliPageModule,
@@ -104,6 +101,24 @@ export class PoliPageModule {
       'PoliPageModule.forRootAsync requires one of useFactory, useClass, or useExisting.',
     )
   }
+}
+
+/**
+ * `forRootAsync` decides on the global filter at registration, before the factory runs, so a
+ * `registerGlobalExceptionFilter` in the factory's result has no effect: say so instead of
+ * ignoring it.
+ */
+function warnIfFactorySetsFilterFlag(opts: PoliPageModuleOptions): void {
+  if (opts.registerGlobalExceptionFilter === undefined) return
+  new Logger('PoliPageModule').warn(
+    'registerGlobalExceptionFilter returned by the forRootAsync factory is ignored: ' +
+      'set it at the top level of the forRootAsync options instead.',
+  )
+}
+
+/** The global `PoliPageExceptionFilter`, on unless the option is `false`. */
+function exceptionFilterProviders(register: boolean | undefined): Provider[] {
+  return register === false ? [] : [{ provide: APP_FILTER, useClass: PoliPageExceptionFilter }]
 }
 
 export function buildClient(opts: PoliPageModuleOptions): PoliPage {

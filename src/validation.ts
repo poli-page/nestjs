@@ -1,15 +1,24 @@
+import { Logger } from '@nestjs/common'
 import type { PoliPageModuleOptions } from './poli-page.options'
 
-const KEY_PATTERN = /^pp_(test|live)_/
+// `pp_{env}_{32 hex}`, where `{env}` is lowercase, letter first, single inner
+// hyphens, at most 20 characters.
+const KEY_PATTERN = /^pp_(?=[a-z][a-z0-9-]{0,19}_)[a-z][a-z0-9]*(?:-[a-z0-9]+)*_[0-9a-f]{32}$/
+
+const logger = new Logger('PoliPageModule')
 
 export function validatePoliPageOptions(options: PoliPageModuleOptions): void {
-  if (typeof options.apiKey !== 'string') {
+  if (typeof options.apiKey !== 'string' || options.apiKey === '') {
     throw new Error('PoliPageModuleOptions.apiKey is required.')
   }
+  // The API is the only authority on keys: a key of an unexpected shape is
+  // reported once and sent anyway, so the API answers with its own error. The
+  // warning shows no part of the key, not even a `pp_{env}_` prefix: a
+  // mis-pasted secret fragment can look like an environment name.
   if (!KEY_PATTERN.test(options.apiKey)) {
-    const prefix = options.apiKey.slice(0, 8)
-    throw new Error(
-      `PoliPageModuleOptions.apiKey must start with pp_test_ or pp_live_. Got: ${prefix}…`,
+    logger.warn(
+      'PoliPageModuleOptions.apiKey does not match the expected format pp_{environment}_{32 lowercase hex characters}. ' +
+        'Starting anyway; the Poli Page API decides whether the key is valid.',
     )
   }
   if (options.timeout !== undefined) {

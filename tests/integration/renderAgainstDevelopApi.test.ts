@@ -5,7 +5,7 @@ import { PoliPageModule } from '../../src/poli-page.module'
 import { POLI_PAGE_CLIENT_TOKEN } from '../../src/poli-page.tokens'
 
 const apiKey = process.env.POLI_PAGE_API_KEY
-const skip = apiKey === undefined || !apiKey.startsWith('pp_test_')
+const skip = apiKey === undefined || !apiKey.startsWith('pp_sandbox_')
 const describeMaybe = skip ? describe.skip : describe
 
 describeMaybe('render welcome against live API', () => {
@@ -26,7 +26,6 @@ describeMaybe('render welcome against live API', () => {
     const pdf = await client.render.pdf({
       project: 'getting-started',
       template: 'welcome',
-      version: '1.0.0',
       data: { name: 'nestjs integration test' },
     })
 

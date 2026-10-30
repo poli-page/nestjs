@@ -12,7 +12,6 @@ export class DocumentController {
     const descriptor = await this.poliPage.render.document({
       project: 'getting-started',
       template: 'welcome',
-      version: '1.0.0',
       data: { name: 'Stored doc' },
     })
     return descriptor
