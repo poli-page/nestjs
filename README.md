@@ -1,6 +1,21 @@
 # @poli-page/nestjs
 
+[![Npm](https://img.shields.io/npm/v/@poli-page/nestjs?style=flat&logo=nodedotjs&logoColor=ffffff&label=Npm)](https://www.npmjs.com/package/@poli-page/nestjs)
+[![Downloads](https://img.shields.io/npm/dm/@poli-page/nestjs?style=flat&logo=nodedotjs&logoColor=ffffff&label=Downloads)](https://www.npmjs.com/package/@poli-page/nestjs)
+[![Ci](https://img.shields.io/github/actions/workflow/status/poli-page/nestjs/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=ffffff&label=Ci)](https://github.com/poli-page/nestjs/actions/workflows/ci.yml)
+[![Codeql](https://img.shields.io/github/actions/workflow/status/poli-page/nestjs/codeql.yml?branch=main&style=flat&logo=github&logoColor=ffffff&label=Codeql)](https://github.com/poli-page/nestjs/actions/workflows/codeql.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/poli-page/nestjs/main?style=flat&logo=codecov&logoColor=ffffff&label=Coverage)](https://codecov.io/gh/poli-page/nestjs)
+[![Node](https://img.shields.io/node/v/@poli-page/nestjs?style=flat&logo=nodedotjs&logoColor=ffffff&label=Node)](https://nodejs.org/)
+[![Nestjs](https://img.shields.io/badge/Nestjs-10%20%7C%2011-blue?style=flat&logo=nestjs&logoColor=ffffff)](https://nestjs.com/)
+[![Types](https://img.shields.io/npm/types/@poli-page/nestjs?style=flat&logo=nodedotjs&logoColor=ffffff&label=Types)](https://www.npmjs.com/package/@poli-page/nestjs)
+[![Install size](https://img.shields.io/npm/unpacked-size/@poli-page/nestjs?style=flat&logo=nodedotjs&logoColor=ffffff&label=Install%20size)](https://www.npmjs.com/package/@poli-page/nestjs)
+[![Deps](https://img.shields.io/badge/Deps-up%20to%20date-brightgreen?style=flat&logo=nodedotjs&logoColor=ffffff)](https://github.com/poli-page/nestjs/network/dependencies)
+[![Docs](https://img.shields.io/badge/Docs-online-brightgreen?style=flat&logo=readthedocs&logoColor=ffffff)](https://poli-page.github.io/nestjs/)
+[![License](https://img.shields.io/npm/l/@poli-page/nestjs?style=flat&logo=gnu&logoColor=ffffff&label=License)](LICENSE)
+
 > Render Poli Page documents from NestJS controllers.
+
+→ **Documentation**: https://poli-page.github.io/nestjs/
 
 ## About
 
@@ -142,7 +157,7 @@ export class AppModule {}
 | `previewResponse()` | Helper returning `{ html, contentType, cacheControl }` for HTML preview routes. |
 | `PoliPageExceptionFilter` | `@Catch(PoliPageError)` filter mapping SDK errors to JSON HTTP responses. |
 
-Full reference: the exports of [`src/index.ts`](src/index.ts) and their doc comments. The SDK underneath is documented at [docs.poli.page/reference/sdk](https://docs.poli.page/reference/sdk/).
+Full reference: [API](https://poli-page.github.io/nestjs/reference/api/) on the documentation site, which covers every export of [`src/index.ts`](src/index.ts). The SDK underneath is documented at [poli-page.github.io/sdk-node](https://poli-page.github.io/sdk-node/).
 
 ## Errors
 
@@ -220,13 +235,13 @@ npm run start:dev
 
 ## Going further
 
-- Configuration — `forRootAsync` patterns (`useFactory`, `useClass`, `useExisting`) in depth (forthcoming `docs/configuration.md`).
-- Exception filter — how `PoliPageExceptionFilter` maps each error category to HTTP (forthcoming `docs/exception-filter.md`).
-- Streaming — returning `render.pdfStream` results through `PoliPagePdfFile` (forthcoming `docs/streaming.md`).
-- Events — bridging `onRequest` / `onResponse` / `onRetry` / `onError` to `EventEmitter2` (forthcoming `docs/events.md`).
-- Testing — overriding the client in `Test.createTestingModule()` (forthcoming `docs/testing.md`).
+The [documentation site](https://poli-page.github.io/nestjs/) goes into each topic in depth:
 
-Until these land, the source under `src/` and the example app are the reference.
+- [Configuration](https://poli-page.github.io/nestjs/concepts/configuration/): `forRoot`, and the `forRootAsync` patterns (`useFactory`, `useClass`, `useExisting`).
+- [Errors](https://poli-page.github.io/nestjs/production/errors/): how `PoliPageExceptionFilter` maps each error category to HTTP.
+- [Responses](https://poli-page.github.io/nestjs/concepts/responses/): PDFs, `render.pdfStream` results through `PoliPagePdfFile`, HTML previews and document redirects.
+- [Observability](https://poli-page.github.io/nestjs/production/observability/): the `onRequest` / `onResponse` / `onRetry` / `onError` callbacks.
+- [Testing](https://poli-page.github.io/nestjs/production/testing/): overriding the client in `Test.createTestingModule()`.
 
 ## Compatibility
 
@@ -238,7 +253,9 @@ Express is the tested platform. The error handler is also tested on Fastify; the
 
 ## Contributing
 
-`npm run typecheck`, `npm run lint`, `npm test` and `npm run build` are what CI runs.
+`npm run typecheck`, `npm run lint`, `npm run test:coverage` (the test suite with a coverage report, uploaded to Codecov) and `npm run build` are what CI runs. CodeQL scans the code on every push and pull request to `main`, and weekly.
+
+The documentation site lives in [`docs/`](docs/), an Astro Starlight site on the shared Poli Page docs preset (vendored in `docs/src/preset/`). Build it with `npm ci && npm run build` in `docs/`: the build fails when a page is missing or breaks the page rules. The Docs workflow deploys it to GitHub Pages when a push to `main` changes it.
 
 Releases are cut by pushing a `vX.Y.Z` tag; see [RELEASING.md](RELEASING.md).
 
