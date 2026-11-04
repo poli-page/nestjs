@@ -21,7 +21,7 @@ This package wires Poli Page into the Nest DI container. You get a `@Global()` `
 
 - Node.js `>=20.18.0`
 - NestJS `^10` or `^11`
-- [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk) `^0.11.0` (installed with the module): environment keys, no template versions
+- [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk) `^0.13.0` (installed with the module), the same minor as this package
 - `reflect-metadata` `^0.1.13` or `^0.2.0` and `rxjs` `^7.8.0` (Nest peers)
 - A Poli Page API key — get one at [poli.page/dashboard](https://poli.page/dashboard)
 
@@ -98,7 +98,7 @@ You pass options to `forRoot` (or return them from `forRootAsync`). The module v
 |---|---|---|
 | `apiKey` | — | Required: a missing, empty or non-string value throws. Any other non-empty string is accepted: a key that does not match `pp_{environment}_{32 lowercase hex characters}` logs one warning at startup that names the expected format and shows no part of the key, and the API answers it. |
 | `baseUrl` | SDK default | Override the API host. |
-| `timeout` | SDK default | Per-request timeout in ms, in `(0, 600_000]`. |
+| `timeout` | SDK default | Per-request timeout in ms, in `(0, 600_000]`. It also bounds the PDF download: the whole download for `render.pdf`, the wait for each chunk for `render.pdfStream`. A download that outlasts it fails with `DOWNLOAD_FAILED` (no status, so the error handler answers `500`), not `timeout`. |
 | `maxRetries` | SDK default | Integer in `[0, 10]`. |
 | `retryDelay` | SDK default | Base retry delay in ms, in `[0, 30_000]`. |
 | `onRequest` / `onResponse` / `onRetry` / `onError` | — | Lifecycle callbacks passed through to the SDK. |
@@ -152,6 +152,8 @@ The SDK exposes a single `PoliPageError` class with predicates and codes rather 
 - **Rate limit** — `err.isRateLimitError()` (HTTP 429).
 - **Request rejected** — render-side validation and processing errors surface with `err.code` values such as `VALIDATION_ERROR`, `TEMPLATE_NOT_FOUND`, `INTERNAL_ERROR`.
 - **Network / transport** — `err.isNetworkError()` (`code: 'network_error'` or `'timeout'`, no `status`).
+- **Invalid response** — `code: 'invalid_response'`: a 2xx whose body is not JSON, usually from a proxy between the SDK and the API. `err.status` is that 2xx; `toPayload()` answers `502`.
+- **File write** — `code: 'io_error'` (no `status`): `renderToFile` cannot write its file.
 
 ### Error handler
 
@@ -166,7 +168,8 @@ The SDK exposes a single `PoliPageError` class with predicates and codes rather 
 | API error (4xx, 5xx) | the API's status | the API's status |
 | `network_error` | `503` | `503` |
 | `timeout` | `504` | `504` |
-| SDK error with no status (e.g. `aborted`) | `500` | `null` |
+| `invalid_response` | `502` | `502` |
+| SDK error with no status (e.g. `aborted`, `io_error`, `DOWNLOAD_FAILED`) | `500` | `null` |
 
 `requestId` is the API's `x-request-id`, or `null` when there is none. The filter is `@Catch(PoliPageError)`: other throws reach Nest's default handler.
 
@@ -228,11 +231,11 @@ These topic files are forthcoming; until they land, the source under `src/` and 
 
 ## Compatibility
 
-| Package | NestJS | Node |
-|---|---|---|
-| `0.11.x` | `^10` or `^11` | `>=20.18.0` |
+| Package | `@poli-page/sdk` | NestJS | Node |
+|---|---|---|---|
+| `0.13.x` | `0.13.x` | `^10` or `^11` | `>=20.18.0` |
 
-Express is the tested platform. The error handler is also tested on Fastify; the rest of the package (`StreamableFile` is platform-agnostic) is expected to work there but is not covered by tests in `0.11`. New NestJS majors land within one minor of upstream release.
+Express is the tested platform. The error handler is also tested on Fastify; the rest of the package (`StreamableFile` is platform-agnostic) is expected to work there but is not covered by tests in `0.13`. New NestJS majors land within one minor of upstream release.
 
 ## Contributing
 

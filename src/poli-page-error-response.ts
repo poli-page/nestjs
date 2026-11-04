@@ -14,8 +14,8 @@ export interface PoliPageErrorTarget {
 /**
  * Answers `err` with the SDK's `toPayload()` as the JSON body: `{ code, message, status,
  * requestId }`. The HTTP status is the payload's `status` (the API status, 503 for
- * `network_error`, 504 for `timeout`), or 500 when the error has none; the body keeps
- * `status: null` in that case.
+ * `network_error`, 504 for `timeout`, 502 for `invalid_response`), or 500 when the error has
+ * none (as for `io_error`); the body keeps `status: null` in that case.
  *
  * Headers a route set for a PDF (`Content-Disposition`, `Content-Length`) are removed first. When
  * the headers are already sent, the body can no longer be replaced: the connection is destroyed.
