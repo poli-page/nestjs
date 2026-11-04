@@ -1,6 +1,6 @@
 # Vendored Starlight preset
 
-The files in this directory are vendored from the reference repo `sdk-docs-preset`, at commit `b1ae69b` (`b1ae69b069fd21071062085a40ff93662fca87d2`). They define the shared sidebar, theme, lint plugins, and Astro components used by every Poli Page SDK and integration doc site. This site uses the preset's **integration profile** (`profile: 'integration'` in `astro.config.mjs`).
+The files in this directory are vendored from the reference repo `sdk-docs-preset`, at commit `0d97ffb` (`0d97ffbf58812793088cff212aceb46e3a549f6b`). They define the shared sidebar, theme, lint plugins, and Astro components used by every Poli Page SDK and integration doc site. This site uses the preset's **integration profile** (`profile: 'integration'` in `astro.config.mjs`).
 
 **This is a copy, not a dependency.** The site does not depend on any npm package named `@poli-page/starlight-preset`. Imports use the local alias `@preset` (configured in `astro.config.mjs` and `tsconfig.json`).
 
@@ -19,15 +19,14 @@ When the upstream preset changes:
 | `src/components/*.astro`      | `components/`                    |
 | `src/styles/poli-page.css`    | `styles/`                        |
 
-3. Make the two local edits below again.
+3. Make the local edit below again.
 4. Update the commit above, then run `npm run build` in `docs/` to verify nothing regressed.
 
-## Local edits
+## Local edit
 
-The copy differs from upstream `dist/` in two ways:
+The copy differs from upstream `dist/` in one way:
 
 - `theme.js`: `POLI_PAGE_CSS_PATH` is `'@preset/styles/poli-page.css'` instead of `'@poli-page/starlight-preset/styles/poli-page.css'`, so the CSS resolves through the local alias. Every SDK site makes the same edit.
-- Every `.js` file has its trailing `//# sourceMappingURL=…` line removed. The `.map` files and the TypeScript sources are not vendored, so the line only made `astro build` print a "Failed to load source map" error per file.
 
 ## What is NOT vendored
 
