@@ -142,7 +142,7 @@ export class AppModule {}
 | `previewResponse()` | Helper returning `{ html, contentType, cacheControl }` for HTML preview routes. |
 | `PoliPageExceptionFilter` | `@Catch(PoliPageError)` filter mapping SDK errors to JSON HTTP responses. |
 
-Full reference: [docs/api.md](docs/api.md).
+Full reference: the exports of [`src/index.ts`](src/index.ts) and their doc comments. The SDK underneath is documented at [docs.poli.page/reference/sdk](https://docs.poli.page/reference/sdk/).
 
 ## Errors
 
@@ -220,14 +220,13 @@ npm run start:dev
 
 ## Going further
 
-- [docs/api.md](docs/api.md) — Full API reference for every exported symbol.
-- [docs/configuration.md](docs/configuration.md) — `forRootAsync` patterns (`useFactory`, `useClass`, `useExisting`) in depth.
-- [docs/exception-filter.md](docs/exception-filter.md) — How `PoliPageExceptionFilter` maps each error category to HTTP.
-- [docs/streaming.md](docs/streaming.md) — Returning `render.pdfStream` results through `PoliPagePdfFile`.
-- [docs/events.md](docs/events.md) — Bridging `onRequest` / `onResponse` / `onRetry` / `onError` to `EventEmitter2`.
-- [docs/testing.md](docs/testing.md) — Overriding the client in `Test.createTestingModule()`.
+- Configuration — `forRootAsync` patterns (`useFactory`, `useClass`, `useExisting`) in depth (forthcoming `docs/configuration.md`).
+- Exception filter — how `PoliPageExceptionFilter` maps each error category to HTTP (forthcoming `docs/exception-filter.md`).
+- Streaming — returning `render.pdfStream` results through `PoliPagePdfFile` (forthcoming `docs/streaming.md`).
+- Events — bridging `onRequest` / `onResponse` / `onRetry` / `onError` to `EventEmitter2` (forthcoming `docs/events.md`).
+- Testing — overriding the client in `Test.createTestingModule()` (forthcoming `docs/testing.md`).
 
-These topic files are forthcoming; until they land, the source under `src/` and the example app are the reference.
+Until these land, the source under `src/` and the example app are the reference.
 
 ## Compatibility
 
