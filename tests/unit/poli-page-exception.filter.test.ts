@@ -123,6 +123,40 @@ describe('PoliPageExceptionFilter', () => {
     })
   })
 
+  it('answers invalid_response with 502, as toPayload() maps it, though the error carries the 2xx', () => {
+    const err = new PoliPageError(
+      'Invalid response: HTTP 200 body is not JSON',
+      'invalid_response',
+      200,
+      'req_invalid',
+    )
+
+    const { status, body } = answer(err)
+
+    expect(status).toBe(502)
+    expect(body).toEqual({
+      code: 'invalid_response',
+      message: 'Invalid response: HTTP 200 body is not JSON',
+      status: 502,
+      requestId: 'req_invalid',
+    })
+    expect(body).toEqual(err.toPayload())
+  })
+
+  it('answers io_error with 500 and keeps status null in the body', () => {
+    const err = new PoliPageError('Failed to write PDF: ./out/a.pdf: EACCES: permission denied', 'io_error')
+
+    const { status, body } = answer(err)
+
+    expect(status).toBe(500)
+    expect(body).toEqual({
+      code: 'io_error',
+      message: 'Failed to write PDF: ./out/a.pdf: EACCES: permission denied',
+      status: null,
+      requestId: null,
+    })
+  })
+
   it('removes the PDF headers a route set before the error', () => {
     const res = new FakeResponse()
       .setHeader('Content-Type', 'application/pdf')

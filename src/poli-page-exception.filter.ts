@@ -12,8 +12,9 @@ import {
 /**
  * Answers a `PoliPageError` with the SDK's `toPayload()` as the JSON body:
  * `{ code, message, status, requestId }`. The HTTP status is the payload's
- * `status` (the API status, 503 for `network_error`, 504 for `timeout`), or
- * 500 when the error has none; the body keeps `status: null` in that case.
+ * `status` (the API status, 503 for `network_error`, 504 for `timeout`, 502
+ * for `invalid_response`), or 500 when the error has none (as for `io_error`);
+ * the body keeps `status: null` in that case.
  * PDF headers the route set (`Content-Disposition`, `Content-Length`) are
  * removed; when the response has already started, the connection is destroyed.
  *
