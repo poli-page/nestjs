@@ -1,0 +1,68 @@
+---
+title: Install
+description: Install @poli-page/nestjs and @poli-page/sdk, set your API key and register PoliPageModule.
+---
+
+The NestJS integration ships as `@poli-page/nestjs` on npm. It wraps the Node.js SDK, `@poli-page/sdk`, in a `@Global()` Nest module, so you install both and register the module once in your root module.
+
+## Requirements
+
+- Node.js `>=20.18.0`
+- NestJS `^10` or `^11` (`@nestjs/common` and `@nestjs/core`)
+- `@poli-page/sdk` `^0.13.0`, the same minor as this package
+- `reflect-metadata` `^0.1.13` or `^0.2.0` and `rxjs` `^7.8.0`, the Nest peers
+- A Poli Page API key, from [poli.page/dashboard](https://poli.page/dashboard)
+
+CI tests Node 20 and 22 against NestJS 10 and 11 on Express. The error handler is also tested on Fastify.
+
+## Install the packages
+
+```bash
+npm install @poli-page/nestjs @poli-page/sdk
+```
+
+## Set your API key
+
+Put the key in the environment your app reads:
+
+```bash
+# .env
+POLI_PAGE_API_KEY=pp_sandbox_xxx
+```
+
+A key is `pp_{env}_{32 lowercase hex}`, where `{env}` is the environment it belongs to. The key alone selects the environment, so a render never names a version:
+
+| Environment | Key | Watermark | Counted |
+| --- | --- | --- | --- |
+| `sandbox` (every org) | `pp_sandbox_…` | yes | no |
+| `live` (every org, deletable on Pro+) | `pp_live_…` | no | yes |
+| created on Pro+ (e.g. `staging`) | `pp_staging_…` | no | yes |
+
+"Counted" means the render counts toward the organization's monthly PDF quota.
+
+## Register the module
+
+Import `PoliPageModule` once, in your root module. It is global: every controller and provider can then inject `PoliPageService`.
+
+Nest has no project-level CLI hook, so the smoke test is booting your app with `nest start`, or the example app in the repo's [`example-app/`](https://github.com/poli-page/nestjs/tree/main/example-app).
+
+## Example
+
+```ts
+// src/app.module.ts
+import { Module } from '@nestjs/common'
+import { PoliPageModule } from '@poli-page/nestjs'
+
+@Module({
+  imports: [
+    PoliPageModule.forRoot({
+      apiKey: process.env.POLI_PAGE_API_KEY!,
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+## See also
+- [Quick start](../quick-start/)
+- [Configuration](../../concepts/configuration/)

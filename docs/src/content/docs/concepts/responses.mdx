@@ -1,0 +1,82 @@
+---
+title: Responses
+description: Answer PDFs, streamed PDFs, HTML previews and document redirects from NestJS routes.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+The integration gives you two response helpers: `PoliPagePdfFile` for PDF routes and `previewResponse()` for HTML preview routes. A redirect to a stored document needs no helper: Nest's `@Redirect()` does it with the document's URL.
+
+## PDF
+
+`new PoliPagePdfFile(body, options)` is a Nest `StreamableFile` with `Content-Type: application/pdf`. `body` is the bytes from `render.pdf` (a `Uint8Array` or a `Buffer`), or a stream: a Node `Readable` or a Web `ReadableStream<Uint8Array>`.
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `filename` | — | Sets `Content-Disposition` with this filename. Without it, the header is a bare `attachment` or `inline`. |
+| `inline` | `false` | `true` answers `inline` (the browser shows the PDF) instead of `attachment` (the browser downloads it). |
+| `cacheControl` | `'no-store, private'` | Kept on the file as its `cacheControl` property. |
+
+The filename is written per RFC 6266. Control characters are removed, so a filename cannot split the header. An ASCII filename is a quoted `filename="…"`, with `\` and `"` escaped. A non-ASCII filename also gets a UTF-8 `filename*=UTF-8''…`, behind an ASCII `filename="…"` fallback where each non-ASCII character is `_`.
+
+<Aside type="caution">
+`PoliPagePdfFile` does not send a `Cache-Control` header: Nest's `StreamableFile` sends only the type, disposition and length. Set the header on the route with `@Header('Cache-Control', 'no-store, private')`, as the example app does.
+</Aside>
+
+## Streamed PDF
+
+`render.pdfStream()` is `render.pdf()` with the PDF as a `ReadableStream<Uint8Array>` instead of bytes, so the PDF downloads while Nest sends it. Pass the stream to `PoliPagePdfFile` as you pass bytes.
+
+A stream can fail after the route has returned, for example with `DOWNLOAD_FAILED` when the wait for a chunk outlasts `timeout`. Before the first byte, the client gets the error's JSON (see [Errors](../../production/errors/)) without the PDF headers. After it, the connection is destroyed, so a truncated PDF never looks complete.
+
+## HTML preview
+
+`previewResponse(html, options)` returns `{ html, contentType, cacheControl }`, with `contentType` set to `'text/html; charset=utf-8'` and `cacheControl` defaulting to `'no-store, private'`. It sets no header itself: set `Content-Type` and `Cache-Control` on the route, and return its `html`. The HTML comes from `documents.preview(id)`.
+
+## Redirect to a stored document
+
+`render.document()` stores the rendered document and resolves to its descriptor. `documents.get(id)` returns it again later, with `presignedPdfUrl`, a presigned URL valid for 15 minutes. Return that URL from a `@Redirect()` route.
+
+## Example
+
+```ts
+// src/invoice.controller.ts
+import { Controller, Get, Header, Param, Redirect } from '@nestjs/common'
+import { PoliPagePdfFile, PoliPageService, previewResponse } from '@poli-page/nestjs'
+
+@Controller('invoices')
+export class InvoiceController {
+  constructor(private readonly poliPage: PoliPageService) {}
+
+  @Get(':id/pdf')
+  @Header('Cache-Control', 'no-store, private')
+  async pdf(@Param('id') id: string): Promise<PoliPagePdfFile> {
+    const stream = await this.poliPage.render.pdfStream({
+      project: 'billing',
+      template: 'invoice',
+      data: { invoiceNumber: id },
+    })
+    return new PoliPagePdfFile(stream, { filename: `invoice-${id}.pdf`, inline: true })
+  }
+
+  @Get('documents/:documentId/preview')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  @Header('Cache-Control', 'no-store, private')
+  async preview(@Param('documentId') documentId: string): Promise<string> {
+    const result = await this.poliPage.documents.preview(documentId)
+    return previewResponse(result.html).html
+  }
+
+  @Get('documents/:documentId')
+  @Redirect()
+  async download(@Param('documentId') documentId: string): Promise<{ url: string; statusCode: number }> {
+    const descriptor = await this.poliPage.documents.get(documentId)
+    return { url: descriptor.presignedPdfUrl, statusCode: 302 }
+  }
+}
+```
+
+## See also
+- [Quick start](../../getting-started/quick-start/)
+- [Errors](../../production/errors/)
+- [API reference](../../reference/api/)

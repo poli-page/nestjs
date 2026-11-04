@@ -1,0 +1,68 @@
+---
+title: Configuration
+description: The options PoliPageModule reads, how it validates them, and forRoot versus forRootAsync with ConfigService.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+You configure the integration through the options of `PoliPageModule.forRoot()`, or the options a `forRootAsync()` factory returns. The module validates them when the app boots and builds one SDK client from them.
+
+## Options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `apiKey` | — | Required: a missing, empty or non-string value throws. Any other non-empty string is accepted: a key that does not match `pp_{environment}_{32 lowercase hex characters}` logs one warning at startup that names the expected format and shows no part of the key, and the API answers it. |
+| `baseUrl` | SDK default | Override the API host. It must be an `http:` or `https:` URL, or bootstrap throws. |
+| `timeout` | SDK default | Per-request timeout in ms, in `(0, 600_000]`. It also bounds the PDF download: the whole download for `render.pdf`, the wait for each chunk for `render.pdfStream`. A download that outlasts it fails with `DOWNLOAD_FAILED` (no status, so the error handler answers `500`), not `timeout`. |
+| `maxRetries` | SDK default | Integer in `[0, 10]`. |
+| `retryDelay` | SDK default | Base retry delay in ms, in `[0, 30_000]`. |
+| `onRequest` / `onResponse` / `onRetry` / `onError` | — | Lifecycle callbacks passed through to the SDK. See [Observability](../../production/observability/). |
+| `registerGlobalExceptionFilter` | `true` | Registers `PoliPageExceptionFilter` through `APP_FILTER`. `false` turns it off. See [Errors](../../production/errors/). |
+
+An option you leave out is not passed to the SDK, so the SDK's own default applies.
+
+## forRoot
+
+`forRoot(options)` takes the options as a value. It validates them as soon as it is called, so a bad option fails before Nest builds the module.
+
+## forRootAsync
+
+`forRootAsync()` builds the options from other providers, such as `@nestjs/config`'s `ConfigService`. It takes exactly one of three shapes:
+
+- `useFactory`, with `inject` and `imports`: a function that returns the options, or a promise of them.
+- `useClass`: a class implementing `PoliPageOptionsFactory`, whose `createPoliPageOptions()` returns the options. The module registers the class as a provider.
+- `useExisting`: the same, with a `PoliPageOptionsFactory` provider that already exists in an imported module.
+
+Without one of them, `forRootAsync()` throws `PoliPageModule.forRootAsync requires one of useFactory, useClass, or useExisting.` The options are validated when the client is built, after the factory runs.
+
+<Aside type="caution">
+With `forRootAsync`, put `registerGlobalExceptionFilter` at the top level of the async options, not in the factory's result: the module reads it at registration time, before your factory runs. A factory that returns it gets a startup warning, and the value is ignored.
+</Aside>
+
+## Example
+
+```ts
+// src/app.module.ts
+import { Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { PoliPageModule } from '@poli-page/nestjs'
+
+@Module({
+  imports: [
+    ConfigModule.forRoot(),
+    PoliPageModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        apiKey: config.getOrThrow<string>('POLI_PAGE_API_KEY'),
+        baseUrl: config.get<string>('POLI_PAGE_BASE_URL'),
+      }),
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+## See also
+- [Client access](../client-access/)
+- [API reference](../../reference/api/)

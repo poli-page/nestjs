@@ -1,0 +1,48 @@
+---
+title: Quick start
+description: Return your first Poli Page PDF from a NestJS controller.
+---
+
+This page takes you from a registered module to a PDF answered by a controller route. You inject `PoliPageService`, render a template, and wrap the bytes in `PoliPagePdfFile`, which sets the PDF headers for you.
+
+## Register the module
+
+Register `PoliPageModule` in your root module with the key from `POLI_PAGE_API_KEY`, as [Install](../install/) shows. The module validates the options at bootstrap: a missing `apiKey` stops the app.
+
+## Render from a controller
+
+Inject `PoliPageService` in the controller's constructor. `this.poliPage.render.pdf(...)` is the SDK's `client.render.pdf`: it renders the template and resolves to the PDF bytes, a `Uint8Array`.
+
+Return the bytes as a `PoliPagePdfFile`. Nest streams it with `Content-Type: application/pdf` and a `Content-Disposition` header built from `filename`.
+
+The render needs a project and a template published to the environment of your key. Every organization has a `getting-started` project with a `welcome` template in `sandbox`, so `project: 'getting-started'`, `template: 'welcome'` and `data: { name: 'World' }` work with a fresh `sandbox` key.
+
+## Example
+
+```ts
+// src/invoice.controller.ts
+import { Controller, Get, Param } from '@nestjs/common'
+import { PoliPageService, PoliPagePdfFile } from '@poli-page/nestjs'
+
+@Controller('invoices')
+export class InvoiceController {
+  constructor(private readonly poliPage: PoliPageService) {}
+
+  @Get(':id')
+  async pdf(@Param('id') id: string): Promise<PoliPagePdfFile> {
+    const bytes = await this.poliPage.render.pdf({
+      project: 'billing',
+      template: 'invoice',
+      data: { invoiceNumber: id },
+    })
+    return new PoliPagePdfFile(bytes, { filename: `invoice-${id}.pdf` })
+  }
+}
+```
+
+`GET /invoices/INV-001` answers the PDF as `invoice-INV-001.pdf`. Add `InvoiceController` to the `controllers` of a module.
+
+## See also
+- [Client access](../../concepts/client-access/)
+- [Responses](../../concepts/responses/)
+- [Errors](../../production/errors/)

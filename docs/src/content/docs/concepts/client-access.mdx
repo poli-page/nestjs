@@ -1,0 +1,73 @@
+---
+title: Client access
+description: Reach the Poli Page client from controllers and providers through PoliPageService, @InjectPoliPage() or the DI token.
+---
+
+`PoliPageModule` is a `@Global()` module that binds one SDK client in the Nest container. Once the root module imports it, any controller or provider reaches that client in one of three ways, without importing the module again.
+
+## PoliPageService
+
+`PoliPageService` is an injectable facade over the client:
+
+- `poliPage.render` is the SDK's `client.render`: `pdf`, `pdfStream` and `document`.
+- `poliPage.documents` is the SDK's `client.documents`: `get`, `preview`, `thumbnails` and `delete`.
+- `poliPage.client` is the `PoliPage` client itself, for SDK helpers that take a client, such as `renderToFile` from `@poli-page/sdk/node`.
+
+Inject it by type, as any Nest provider.
+
+## @InjectPoliPage()
+
+`@InjectPoliPage()` is a parameter decorator that injects the raw `PoliPage` client. It is `@Inject(POLI_PAGE_CLIENT_TOKEN)` under a shorter name.
+
+## POLI_PAGE_CLIENT_TOKEN
+
+`POLI_PAGE_CLIENT_TOKEN` is the DI token the client is bound to. Use it in your own providers' `inject` lists, or to swap the client in tests with `overrideProvider(POLI_PAGE_CLIENT_TOKEN)`. `POLI_PAGE_OPTIONS_TOKEN` is the token of the module options.
+
+The module exports `PoliPageService` and `POLI_PAGE_CLIENT_TOKEN`. Every injection gets the same client instance, so its retry and timeout settings apply app-wide.
+
+## Example
+
+```ts
+// src/invoice.service.ts
+import { Injectable } from '@nestjs/common'
+import { PoliPageService } from '@poli-page/nestjs'
+
+@Injectable()
+export class InvoiceService {
+  constructor(private readonly poliPage: PoliPageService) {}
+
+  render(invoiceNumber: string): Promise<Uint8Array> {
+    return this.poliPage.render.pdf({
+      project: 'billing',
+      template: 'invoice',
+      data: { invoiceNumber },
+    })
+  }
+}
+```
+
+The same render with the raw client:
+
+```ts
+// src/invoice.service.ts
+import { Injectable } from '@nestjs/common'
+import { InjectPoliPage, type PoliPage } from '@poli-page/nestjs'
+
+@Injectable()
+export class InvoiceService {
+  constructor(@InjectPoliPage() private readonly client: PoliPage) {}
+
+  render(invoiceNumber: string): Promise<Uint8Array> {
+    return this.client.render.pdf({
+      project: 'billing',
+      template: 'invoice',
+      data: { invoiceNumber },
+    })
+  }
+}
+```
+
+## See also
+- [Configuration](../configuration/)
+- [Responses](../responses/)
+- [Testing](../../production/testing/)
