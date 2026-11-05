@@ -25,7 +25,7 @@ This package wires Poli Page into the Nest DI container. You get a `@Global()` `
 
 - You want `@InjectPoliPage()` or `PoliPageService` available in any controller or provider.
 - You want `forRootAsync` integration with `@nestjs/config`'s `ConfigService`.
-- You want PDF responses with the correct `Content-Type`, `Cache-Control`, and RFC 5987 filename headers without writing them by hand.
+- You want PDF responses with the correct `Content-Type` and `Content-Disposition` (RFC 5987 filename) headers without writing them by hand.
 
 **When not to:**
 
