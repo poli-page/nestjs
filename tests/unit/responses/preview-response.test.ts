@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals'
+import { describe, it, expect } from 'vitest'
 import { previewResponse } from '../../../src/responses/preview-response'
 
 describe('previewResponse', () => {

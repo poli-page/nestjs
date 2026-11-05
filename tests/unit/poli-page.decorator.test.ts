@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals'
+import { describe, it, expect } from 'vitest'
 import { Test } from '@nestjs/testing'
 import { Injectable } from '@nestjs/common'
 import { InjectPoliPage } from '../../src/poli-page.decorator'

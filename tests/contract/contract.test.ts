@@ -16,7 +16,7 @@
  * Locally: `POLI_CONTRACT=/path/to/contract.json npm test`. Without it the suite is skipped,
  * except in CI, where a missing contract is an error.
  */
-import { describe, it, expect } from '@jest/globals'
+import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'

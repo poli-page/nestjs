@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect, jest } from '@jest/globals'
+import { afterEach, describe, it, expect, vi } from 'vitest'
 import { Test, type TestingModule } from '@nestjs/testing'
 import { APP_FILTER } from '@nestjs/core'
 import { Injectable, Logger, Module } from '@nestjs/common'
@@ -16,7 +16,7 @@ describe('PoliPageModule.forRootAsync', () => {
   afterEach(async () => {
     await moduleRef?.close()
     moduleRef = undefined
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('resolves with useFactory + no inject', async () => {
@@ -105,7 +105,7 @@ describe('PoliPageModule.forRootAsync', () => {
   })
 
   it.each(WELL_FORMED_KEYS)('boots with %s and no warning', async (key) => {
-    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
 
     moduleRef = await Test.createTestingModule({
       imports: [PoliPageModule.forRootAsync({ useFactory: () => ({ apiKey: key }) })],
@@ -116,7 +116,7 @@ describe('PoliPageModule.forRootAsync', () => {
   })
 
   it.each(MALFORMED_KEYS)('boots with %j and exactly one warning that shows no key text', async (key) => {
-    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
 
     moduleRef = await Test.createTestingModule({
       imports: [PoliPageModule.forRootAsync({ useFactory: () => ({ apiKey: key }) })],

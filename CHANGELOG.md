@@ -4,6 +4,15 @@ All notable changes to `@poli-page/nestjs` are documented here. Format follows [
 
 ## [Unreleased]
 
+### Added
+
+- Support for NestJS 12. The `@nestjs/common` and `@nestjs/core` peer ranges are now `^10.0.0 || ^11.0.0 || ^12.0.0`. NestJS 12 is ESM-only; this package stays CommonJS and loads it through Node's `require()` of ES modules.
+
+### Changed
+
+- **Breaking:** the minimum Node.js version is now 20.19.0 (was 20.18.0), the first Node 20 release where `require()` of an ES module works without a flag, which NestJS 12 needs.
+- The tests run on Vitest with `unplugin-swc` (SWC emits the decorator metadata Nest reads) instead of Jest with `ts-jest`, which cannot load NestJS 12. No effect on the published package.
+
 ## [0.13.0] - 2026-11-04
 
 First release on npm. It requires `@poli-page/sdk` 0.13 and passes the Poli Page API contract v0.13.0. The package shares its major.minor with the Poli Page API, so its first version is 0.13.0; a 0.11.0 was prepared and never published, and neither was the 0.1.0 development line. The **Breaking** markers describe changes against that unreleased code.
