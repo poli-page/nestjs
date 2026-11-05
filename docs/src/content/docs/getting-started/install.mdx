@@ -7,13 +7,13 @@ The NestJS integration ships as `@poli-page/nestjs` on npm. It wraps the Node.js
 
 ## Requirements
 
-- Node.js `>=20.18.0`
-- NestJS `^10` or `^11` (`@nestjs/common` and `@nestjs/core`)
+- Node.js `>=20.19.0`
+- NestJS `^10`, `^11` or `^12` (`@nestjs/common` and `@nestjs/core`)
 - `@poli-page/sdk` `^0.13.0`, the same minor as this package
 - `reflect-metadata` `^0.1.13` or `^0.2.0` and `rxjs` `^7.8.0`, the Nest peers
 - A Poli Page API key, from [poli.page/dashboard](https://poli.page/dashboard)
 
-CI tests Node 20 and 22 against NestJS 10 and 11 on Express. The error handler is also tested on Fastify.
+NestJS 12 is ESM-only, and this package is CommonJS: it loads NestJS 12 with `require()` of an ES module, which Node supports from 20.19.0. CI tests Node 20.19 and 22 against NestJS 10, 11 and 12, and Node 24 against NestJS 12, on Express. The error handler is also tested on Fastify.
 
 ## Install the packages
 

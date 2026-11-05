@@ -6,7 +6,7 @@
 [![Codeql](https://img.shields.io/github/actions/workflow/status/poli-page/nestjs/codeql.yml?branch=main&style=flat&logo=github&logoColor=ffffff&label=Codeql)](https://github.com/poli-page/nestjs/actions/workflows/codeql.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/poli-page/nestjs/main?style=flat&logo=codecov&logoColor=ffffff&label=Coverage)](https://codecov.io/gh/poli-page/nestjs)
 [![Node](https://img.shields.io/node/v/@poli-page/nestjs?style=flat&logo=nodedotjs&logoColor=ffffff&label=Node)](https://nodejs.org/)
-[![Nestjs](https://img.shields.io/badge/Nestjs-10%20%7C%2011-blue?style=flat&logo=nestjs&logoColor=ffffff)](https://nestjs.com/)
+[![Nestjs](https://img.shields.io/badge/Nestjs-10%20%7C%2011%20%7C%2012-blue?style=flat&logo=nestjs&logoColor=ffffff)](https://nestjs.com/)
 [![Types](https://img.shields.io/npm/types/@poli-page/nestjs?style=flat&logo=nodedotjs&logoColor=ffffff&label=Types)](https://www.npmjs.com/package/@poli-page/nestjs)
 [![Install size](https://img.shields.io/npm/unpacked-size/@poli-page/nestjs?style=flat&logo=nodedotjs&logoColor=ffffff&label=Install%20size)](https://www.npmjs.com/package/@poli-page/nestjs)
 [![Deps](https://img.shields.io/badge/Deps-up%20to%20date-brightgreen?style=flat&logo=nodedotjs&logoColor=ffffff)](https://github.com/poli-page/nestjs/network/dependencies)
@@ -34,8 +34,8 @@ This package wires Poli Page into the Nest DI container. You get a `@Global()` `
 
 ## Requirements
 
-- Node.js `>=20.18.0`
-- NestJS `^10` or `^11`
+- Node.js `>=20.19.0`
+- NestJS `^10`, `^11` or `^12`
 - [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk) `^0.13.0` (installed with the module), the same minor as this package
 - `reflect-metadata` `^0.1.13` or `^0.2.0` and `rxjs` `^7.8.0` (Nest peers)
 - A Poli Page API key — get one at [poli.page/dashboard](https://poli.page/dashboard)
@@ -247,7 +247,7 @@ The [documentation site](https://poli-page.github.io/nestjs/) goes into each top
 
 | Package | `@poli-page/sdk` | NestJS | Node |
 |---|---|---|---|
-| `0.13.x` | `0.13.x` | `^10` or `^11` | `>=20.18.0` |
+| `0.13.x` | `0.13.x` | `^10`, `^11` or `^12` | `>=20.19.0` |
 
 Express is the tested platform. The error handler is also tested on Fastify; the rest of the package (`StreamableFile` is platform-agnostic) is expected to work there but is not covered by tests in `0.13`. New NestJS majors land within one minor of upstream release.
 

@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals'
+import { describe, it, expect } from 'vitest'
 import { contentDisposition, isAsciiSafe, rfc5987Encode } from '../../../src/responses/headers'
 
 describe('isAsciiSafe', () => {

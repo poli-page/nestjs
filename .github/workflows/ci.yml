@@ -18,10 +18,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { node: 20, nest: 10 }
-          - { node: 20, nest: 11 }
+          # Node 20.19 is the floor: Nest 12 is ESM-only and loads through require(esm),
+          # which Node 20 ships from 20.19.0.
+          - { node: 20.19, nest: 10 }
+          - { node: 20.19, nest: 11 }
+          - { node: 20.19, nest: 12 }
           - { node: 22, nest: 10 }
           - { node: 22, nest: 11 }
+          - { node: 22, nest: 12 }
+          - { node: 24, nest: 12 }
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -43,7 +48,7 @@ jobs:
         env:
           POLI_CONTRACT: ${{ steps.contract.outputs.path }}
       - name: Upload coverage to Codecov
-        if: matrix.node == 22 && matrix.nest == 11
+        if: matrix.node == 22 && matrix.nest == 12
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage/lcov.info

@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect, jest } from '@jest/globals'
+import { afterEach, describe, it, expect, vi } from 'vitest'
 import {
   Controller,
   Get,
@@ -245,7 +245,7 @@ describe('PoliPageExceptionFilter registration (Express)', () => {
   afterEach(async () => {
     await app?.close()
     app = undefined
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   async function start(registerGlobalExceptionFilter: boolean | undefined): Promise<INestApplication> {
@@ -287,7 +287,7 @@ describe('PoliPageExceptionFilter registration (Express)', () => {
   })
 
   it('stays on, with a warning, when a forRootAsync factory returns registerGlobalExceptionFilter', async () => {
-    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+    const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
     const moduleRef = await Test.createTestingModule({
       imports: [
         PoliPageModule.forRootAsync({

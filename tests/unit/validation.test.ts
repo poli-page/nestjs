@@ -1,13 +1,13 @@
-import { afterEach, beforeEach, describe, it, expect, jest } from '@jest/globals'
+import { afterEach, beforeEach, describe, it, expect, vi, type MockInstance } from 'vitest'
 import { Logger } from '@nestjs/common'
 import { validatePoliPageOptions } from '../../src/validation'
 import { expectNoKeyText, MALFORMED_KEYS, SANDBOX_KEY, WELL_FORMED_KEYS } from './fixtures/api-keys'
 
 describe('validatePoliPageOptions', () => {
-  let warn: jest.SpiedFunction<Logger['warn']>
+  let warn: MockInstance<Logger['warn']>
 
   beforeEach(() => {
-    warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+    warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
   })
 
   afterEach(() => {

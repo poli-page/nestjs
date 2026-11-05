@@ -1,4 +1,4 @@
-import { afterEach } from '@jest/globals'
+import { afterEach } from 'vitest'
 
 const baselineUnhandled = [...process.listeners('unhandledRejection')]
 const baselineUncaught = [...process.listeners('uncaughtException')]

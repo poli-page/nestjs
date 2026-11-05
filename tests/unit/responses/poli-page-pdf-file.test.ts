@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect } from '@jest/globals'
+import { afterEach, describe, it, expect } from 'vitest'
 import { Controller, Get, type INestApplication } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import { PoliPageError } from '@poli-page/sdk'

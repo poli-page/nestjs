@@ -1,4 +1,4 @@
-import { describe, it, expect, jest } from '@jest/globals'
+import { describe, it, expect, vi } from 'vitest'
 import { Test } from '@nestjs/testing'
 import type { PoliPage } from '@poli-page/sdk'
 import { PoliPageService } from '../../src/poli-page.service'
@@ -8,15 +8,15 @@ describe('PoliPageService', () => {
   function stubClient(): PoliPage {
     return {
       render: {
-        pdf: jest.fn(),
-        pdfStream: jest.fn(),
-        document: jest.fn(),
+        pdf: vi.fn(),
+        pdfStream: vi.fn(),
+        document: vi.fn(),
       },
       documents: {
-        get: jest.fn(),
-        preview: jest.fn(),
-        thumbnails: jest.fn(),
-        delete: jest.fn(),
+        get: vi.fn(),
+        preview: vi.fn(),
+        thumbnails: vi.fn(),
+        delete: vi.fn(),
       },
     } as unknown as PoliPage
   }
