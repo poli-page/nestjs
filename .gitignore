@@ -17,6 +17,9 @@ build/
 coverage/
 *.tsbuildinfo
 
+# Docs site (docs/): Astro's generated types
+docs/.astro/
+
 # Python
 __pycache__/
 *.py[cod]

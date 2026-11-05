@@ -1,0 +1,84 @@
+---
+title: Errors
+description: How PoliPageExceptionFilter answers SDK errors as JSON, which status each error gets, and how to handle them yourself.
+---
+
+Every SDK failure is a `PoliPageError`. `PoliPageModule` registers `PoliPageExceptionFilter` as a global filter by default, so a `PoliPageError` that leaves a controller answers a JSON body with a matching HTTP status instead of Nest's generic `500`.
+
+## The error
+
+The SDK has one error class, `PoliPageError`, with a `code`, an optional `status` and an optional `requestId`, and predicates instead of subclasses:
+
+- **Auth**: `err.isAuthError()`, HTTP 401 or 403.
+- **Rate limit**: `err.isRateLimitError()`, HTTP 429.
+- **Request rejected**: render-side validation and processing errors, with `err.code` values such as `VALIDATION_ERROR`, `TEMPLATE_NOT_FOUND` or `INTERNAL_ERROR`.
+- **Network or transport**: `err.isNetworkError()`, with `code: 'network_error'` or `'timeout'` and no `status`.
+- **Invalid response**: `code: 'invalid_response'`, a 2xx whose body is not JSON, usually from a proxy between the SDK and the API. `err.status` is that 2xx.
+- **File write**: `code: 'io_error'`, no `status`: `renderToFile` cannot write its file.
+
+## What the filter answers
+
+The body is the SDK's `err.toPayload()`, `{ code, message, status, requestId }`, with `Content-Type: application/json` and `Cache-Control: no-store, private`:
+
+```json
+{ "code": "TEMPLATE_NOT_FOUND", "message": "Template 'invoice' not found in project 'billing'.", "status": 404, "requestId": "req_…" }
+```
+
+| Error | HTTP status | Body `status` |
+| --- | --- | --- |
+| API error (4xx, 5xx) | the API's status | the API's status |
+| `network_error` | `503` | `503` |
+| `timeout` | `504` | `504` |
+| `invalid_response` | `502` | `502` |
+| SDK error with no status (e.g. `aborted`, `io_error`, `DOWNLOAD_FAILED`) | `500` | `null` |
+
+`requestId` is the API's `x-request-id`, or `null` when there is none. The filter is `@Catch(PoliPageError)`: other exceptions reach Nest's default handler.
+
+- It answers through Nest's HTTP adapter, so it works on Express and Fastify.
+- It removes the PDF headers a route set before the error (`Content-Disposition`, `Content-Length`), so the JSON is never saved as a PDF. If the response has already started, it destroys the connection instead: the body can no longer be replaced.
+- Outside HTTP it gives the error back: it rethrows it from GraphQL resolvers and WebSocket gateways, and passes it as is to a microservice transport, in an error `Observable`.
+- An error raised by a `render.pdfStream()` stream after the route returned never reaches exception filters. The answer is the same: before the first byte, the `toPayload()` JSON without the PDF headers; after it, the connection is destroyed. On Express `PoliPagePdfFile` answers it itself; on Fastify the stream error reaches the global filter, which answers it.
+
+## Handle errors yourself
+
+Set `registerGlobalExceptionFilter: false` to turn the global filter off. You can then catch `PoliPageError` in your code, or apply the filter to a narrower scope with `@UseFilters(PoliPageExceptionFilter)` on a controller or a route.
+
+## Example
+
+```ts
+// src/invoice.controller.ts
+import { Controller, Get, HttpException, Param, UnauthorizedException } from '@nestjs/common'
+import { PoliPageError } from '@poli-page/sdk'
+import { PoliPagePdfFile, PoliPageService } from '@poli-page/nestjs'
+
+@Controller('invoices')
+export class InvoiceController {
+  constructor(private readonly poliPage: PoliPageService) {}
+
+  @Get(':id')
+  async pdf(@Param('id') id: string): Promise<PoliPagePdfFile> {
+    try {
+      const bytes = await this.poliPage.render.pdf({
+        project: 'billing',
+        template: 'invoice',
+        data: { invoiceNumber: id },
+      })
+      return new PoliPagePdfFile(bytes, { filename: `invoice-${id}.pdf` })
+    } catch (err) {
+      if (err instanceof PoliPageError) {
+        if (err.isAuthError()) throw new UnauthorizedException()
+        if (err.isRateLimitError()) throw new HttpException('Slow down', 429)
+        if (err.isNetworkError()) throw new HttpException('Upstream unreachable', 503)
+      }
+      throw err
+    }
+  }
+}
+```
+
+This controller handles some errors itself; with the global filter left on, the other `PoliPageError`s it rethrows still answer the JSON above.
+
+## See also
+- [Configuration](../../concepts/configuration/)
+- [Responses](../../concepts/responses/)
+- [Testing](../testing/)

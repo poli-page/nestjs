@@ -17,6 +17,7 @@
     "lint:fix": "eslint . --fix",
     "lint:pack": "attw --pack . --profile node16 && publint --strict",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "test:integration": "jest --config jest.integration.config.ts",
     "prepublishOnly": "npm run build"

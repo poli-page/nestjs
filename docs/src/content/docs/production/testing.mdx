@@ -1,0 +1,82 @@
+---
+title: Testing
+description: Replace the Poli Page client with a fake in Nest's Test.createTestingModule() and test routes without calling the API.
+---
+
+Every part of the integration reaches the API through one client, bound to `POLI_PAGE_CLIENT_TOKEN`. In tests you swap that provider for a fake with Nest's testing module, so `PoliPageService`, `@InjectPoliPage()` and your routes run without a network call.
+
+## Override the client
+
+Import `PoliPageModule.forRoot()` as the app does, then call `overrideProvider(POLI_PAGE_CLIENT_TOKEN).useValue(fake)` on the testing module. `PoliPageService` reads `render` and `documents` from the fake. The fake needs only the methods your code calls.
+
+Pass `forRoot()` an `apiKey` in the key format, such as `pp_sandbox_` followed by 32 zeros: any other non-empty string boots too, but logs a format warning. The overridden client never sends it.
+
+## Fake an error
+
+Make a fake method reject with `new PoliPageError(message, code, status, requestId)` from `@poli-page/sdk`. The global exception filter answers it as in production, so you can assert the JSON body and the status.
+
+## Unit tests without the module
+
+To test one provider, skip the module: provide `{ provide: POLI_PAGE_CLIENT_TOKEN, useValue: fake }` and `PoliPageService` in `Test.createTestingModule({ providers })`. The global exception filter is then not registered.
+
+## Example
+
+```ts
+// src/invoice.controller.spec.ts
+import { Test } from '@nestjs/testing'
+import type { INestApplication } from '@nestjs/common'
+import request from 'supertest'
+import { PoliPageError } from '@poli-page/sdk'
+import { PoliPageModule, POLI_PAGE_CLIENT_TOKEN, type PoliPage } from '@poli-page/nestjs'
+import { InvoiceController } from './invoice.controller'
+
+describe('InvoiceController', () => {
+  const pdf = jest.fn()
+  const fakeClient = { render: { pdf }, documents: {} } as unknown as PoliPage
+  let app: INestApplication
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [PoliPageModule.forRoot({ apiKey: `pp_sandbox_${'0'.repeat(32)}` })],
+      controllers: [InvoiceController],
+    })
+      .overrideProvider(POLI_PAGE_CLIENT_TOKEN)
+      .useValue(fakeClient)
+      .compile()
+    app = moduleRef.createNestApplication()
+    await app.init()
+  })
+
+  afterAll(() => app.close())
+
+  it('answers the PDF', async () => {
+    pdf.mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]))
+    const res = await request(app.getHttpServer()).get('/invoices/INV-001')
+    expect(res.status).toBe(200)
+    expect(res.headers['content-type']).toBe('application/pdf')
+    expect(pdf).toHaveBeenCalledWith({
+      project: 'billing',
+      template: 'invoice',
+      data: { invoiceNumber: 'INV-001' },
+    })
+  })
+
+  it('answers a missing template as 404 JSON', async () => {
+    pdf.mockRejectedValue(
+      new PoliPageError("Template 'invoice' not found in project 'billing'.", 'TEMPLATE_NOT_FOUND', 404, 'req_123'),
+    )
+    const res = await request(app.getHttpServer()).get('/invoices/INV-001')
+    expect(res.status).toBe(404)
+    expect(res.body).toEqual({
+      code: 'TEMPLATE_NOT_FOUND',
+      message: "Template 'invoice' not found in project 'billing'.",
+      status: 404,
+      requestId: 'req_123',
+    })
+  })
+})
+```
+
+## See also
+- [Client access](../../concepts/client-access/)
+- [Errors](../errors/)

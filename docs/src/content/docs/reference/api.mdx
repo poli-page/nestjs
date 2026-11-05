@@ -1,0 +1,165 @@
+---
+title: API
+description: Every export of @poli-page/nestjs, its signature and its behavior, on one page.
+---
+
+This page lists the whole public surface of `@poli-page/nestjs`: the exports of [`src/index.ts`](https://github.com/poli-page/nestjs/blob/main/src/index.ts). The SDK methods behind `render` and `documents` are documented on the [Node.js SDK site](../sdk/).
+
+## PoliPageModule
+
+A `@Global()` dynamic module. It provides `POLI_PAGE_OPTIONS_TOKEN`, `POLI_PAGE_CLIENT_TOKEN` and `PoliPageService`, exports `POLI_PAGE_CLIENT_TOKEN` and `PoliPageService`, and registers `PoliPageExceptionFilter` through `APP_FILTER` unless `registerGlobalExceptionFilter` is `false`.
+
+```ts
+class PoliPageModule {
+  static forRoot(options: PoliPageModuleOptions): DynamicModule
+  static forRootAsync(asyncOptions: PoliPageModuleAsyncOptions): DynamicModule
+}
+```
+
+- `forRoot` validates `options` when it is called and throws on an invalid one.
+- `forRootAsync` validates the options when the client is built, after the factory runs. It throws `PoliPageModule.forRootAsync requires one of useFactory, useClass, or useExisting.` when none is given.
+
+## PoliPageModuleOptions
+
+```ts
+interface PoliPageModuleOptions {
+  apiKey: string
+  baseUrl?: string
+  timeout?: number
+  maxRetries?: number
+  retryDelay?: number
+  onRequest?: (e: RequestEvent) => void
+  onResponse?: (e: ResponseEvent) => void
+  onRetry?: (e: RetryEvent) => void
+  onError?: (err: PoliPageError) => void
+  registerGlobalExceptionFilter?: boolean
+}
+```
+
+| Option | Rule | Error when broken |
+| --- | --- | --- |
+| `apiKey` | Non-empty string. A string that is not `pp_{environment}_{32 lowercase hex}` logs one warning and is accepted. | `PoliPageModuleOptions.apiKey is required.` |
+| `baseUrl` | An `http:` or `https:` URL. | `PoliPageModuleOptions.baseUrl must be a valid http(s) URL.` |
+| `timeout` | Number in `(0, 600_000]` ms. | `PoliPageModuleOptions.timeout must be a number in (0, 600_000] ms.` |
+| `maxRetries` | Integer in `[0, 10]`. | `PoliPageModuleOptions.maxRetries must be an integer in [0, 10].` |
+| `retryDelay` | Number in `[0, 30_000]` ms. | `PoliPageModuleOptions.retryDelay must be a number in [0, 30_000] ms.` |
+| `registerGlobalExceptionFilter` | Default `true`. In a `forRootAsync` factory's result it is ignored, with a warning. | — |
+
+Every option but `registerGlobalExceptionFilter` is passed to the SDK's `PoliPage` constructor when it is set. See [Configuration](../../concepts/configuration/).
+
+## PoliPageModuleAsyncOptions
+
+```ts
+interface PoliPageModuleAsyncOptions extends Pick<ModuleMetadata, 'imports'> {
+  useFactory?: (...args: any[]) => Promise<PoliPageModuleOptions> | PoliPageModuleOptions
+  useClass?: Type<PoliPageOptionsFactory>
+  useExisting?: Type<PoliPageOptionsFactory>
+  inject?: Array<Type<any> | string | symbol>
+  registerGlobalExceptionFilter?: boolean
+}
+```
+
+When several are set, `useFactory` wins over `useExisting`, which wins over `useClass`. `inject` applies to `useFactory`. `registerGlobalExceptionFilter` is read at registration time, before the factory runs.
+
+## PoliPageOptionsFactory
+
+```ts
+interface PoliPageOptionsFactory {
+  createPoliPageOptions(): Promise<PoliPageModuleOptions> | PoliPageModuleOptions
+}
+```
+
+The shape of a `useClass` or `useExisting` provider.
+
+## PoliPageService
+
+```ts
+@Injectable()
+class PoliPageService {
+  readonly client: PoliPage
+  get render(): RenderNamespace
+  get documents(): DocumentsNamespace
+}
+```
+
+`render` is `client.render` (`pdf`, `pdfStream`, `document`) and `documents` is `client.documents` (`get`, `preview`, `thumbnails`, `delete`). See [Client access](../../concepts/client-access/).
+
+## InjectPoliPage
+
+```ts
+function InjectPoliPage(): ParameterDecorator
+```
+
+Injects the `PoliPage` client: `@Inject(POLI_PAGE_CLIENT_TOKEN)`.
+
+## POLI_PAGE_CLIENT_TOKEN and POLI_PAGE_OPTIONS_TOKEN
+
+```ts
+const POLI_PAGE_CLIENT_TOKEN: unique symbol // Symbol('POLI_PAGE_CLIENT')
+const POLI_PAGE_OPTIONS_TOKEN: unique symbol // Symbol('POLI_PAGE_OPTIONS')
+```
+
+The DI tokens of the SDK client and of the module options. Override `POLI_PAGE_CLIENT_TOKEN` to fake the client in tests (see [Testing](../../production/testing/)).
+
+## PoliPagePdfFile
+
+```ts
+class PoliPagePdfFile extends StreamableFile {
+  constructor(
+    body: Uint8Array | Buffer | Readable | ReadableStream<Uint8Array>,
+    options?: PoliPagePdfFileOptions,
+  )
+  readonly cacheControl: string
+}
+
+interface PoliPagePdfFileOptions {
+  filename?: string
+  inline?: boolean
+  cacheControl?: string
+}
+```
+
+- The type is `application/pdf`.
+- The disposition is `attachment`, or `inline` when `inline` is `true`, followed by the RFC 6266 filename when `filename` is set.
+- `cacheControl` defaults to `'no-store, private'`. It is a property only: the response gets no `Cache-Control` header from it.
+- A `PoliPageError` from a streamed body answers the `toPayload()` JSON before the first byte, and destroys the connection after it.
+
+See [Responses](../../concepts/responses/).
+
+## previewResponse
+
+```ts
+function previewResponse(html: string, options?: PreviewResponseOptions): PreviewResponse
+
+interface PreviewResponseOptions {
+  cacheControl?: string
+}
+
+interface PreviewResponse {
+  html: string
+  contentType: 'text/html; charset=utf-8'
+  cacheControl: string
+}
+```
+
+`cacheControl` defaults to `'no-store, private'`. The function sets no header: the route sets them from the result.
+
+## PoliPageExceptionFilter
+
+```ts
+@Catch(PoliPageError)
+class PoliPageExceptionFilter implements ExceptionFilter {
+  constructor(adapterHost?: HttpAdapterHost)
+  catch(err: PoliPageError, host: ArgumentsHost): Observable<never> | undefined
+}
+```
+
+On HTTP it answers `err.toPayload()` as JSON with the payload's `status`, or `500` when there is none. On a microservice transport it returns an error `Observable` of `err`; in any other context it rethrows `err`. It answers through Nest's HTTP adapter. Built with `new PoliPageExceptionFilter()`, without the adapter, it writes to the Node response, and throws when the response is not one. Registered globally by `PoliPageModule` by default; see [Errors](../../production/errors/).
+
+## Re-exported SDK types
+
+These types are re-exported from `@poli-page/sdk`, so you can import them from `@poli-page/nestjs`:
+
+`PoliPage`, `PoliPageError`, `PoliPageErrorCode`, `PoliPageOptions`, `RenderInput`, `DocumentDescriptor`, `DocumentPreviewResult`, `RetryEvent`, `RequestEvent`, `ResponseEvent`.
+
+They are type-only exports. To construct a `PoliPageError` or check `instanceof`, import the class from `@poli-page/sdk`.
