@@ -45,7 +45,7 @@
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.72.1",
     "@vitest/coverage-v8": "^4.1.12",
-    "eslint": "^9.0.0",
+    "eslint": "^10.14.0",
     "publint": "^0.3.25",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
