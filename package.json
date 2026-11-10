@@ -41,7 +41,7 @@
     "@nestjs/testing": "^12.3.3",
     "@swc/core": "^1.16.21",
     "@types/node": "^26.6.5",
-    "@types/supertest": "^6.0.0",
+    "@types/supertest": "^7.2.1",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.72.1",
     "@vitest/coverage-v8": "^4.1.12",
