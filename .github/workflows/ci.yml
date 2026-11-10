@@ -18,11 +18,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Node 20.19 is the floor: Nest 12 is ESM-only and loads through require(esm),
-          # which Node 20 ships from 20.19.0.
-          - { node: 20.19, nest: 10 }
-          - { node: 20.19, nest: 11 }
-          - { node: 20.19, nest: 12 }
+          # Node 22 is the floor: Vitest 5 needs Node >=22.12, and Nest 12 (ESM-only) loads
+          # through require(esm), which Node 22.12 ships unflagged.
           - { node: 22, nest: 10 }
           - { node: 22, nest: 11 }
           - { node: 22, nest: 12 }
