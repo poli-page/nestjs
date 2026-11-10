@@ -10,8 +10,8 @@ All notable changes to `@poli-page/nestjs` are documented here. Format follows [
 
 ### Changed
 
-- **Breaking:** the minimum Node.js version is now 20.19.0 (was 20.18.0), the first Node 20 release where `require()` of an ES module works without a flag, which NestJS 12 needs.
-- The tests run on Vitest with `unplugin-swc` (SWC emits the decorator metadata Nest reads) instead of Jest with `ts-jest`, which cannot load NestJS 12. No effect on the published package.
+- **Breaking:** the minimum Node.js version is now 22.12.0 (was 20.18.0). Node 20 reached end of life on 2026-04-30, and Vitest 5 needs Node 22.12 or later. Node 22.12 also loads ES modules with `require()` without a flag, which NestJS 12 needs. CI no longer tests Node 20.
+- The tests run on Vitest 5 with `unplugin-swc` (SWC emits the decorator metadata Nest reads) instead of Jest with `ts-jest`, which cannot load NestJS 12. No effect on the published package.
 
 ## [0.13.0] - 2026-11-04
 
