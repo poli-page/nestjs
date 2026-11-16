@@ -36,7 +36,7 @@ This package wires Poli Page into the Nest DI container. You get a `@Global()` `
 
 - Node.js `>=22.12.0`
 - NestJS `^10`, `^11` or `^12`
-- [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk) `^0.13.0` (installed with the module), the same minor as this package
+- [`@poli-page/sdk`](https://www.npmjs.com/package/@poli-page/sdk) `^0.15.0` (installed with the module), the same minor as this package
 - `reflect-metadata` `^0.1.13` or `^0.2.0` and `rxjs` `^7.8.0` (Nest peers)
 - A Poli Page API key — get one at [poli.page/dashboard](https://poli.page/dashboard)
 
@@ -247,9 +247,10 @@ The [documentation site](https://poli-page.github.io/nestjs/) goes into each top
 
 | Package | `@poli-page/sdk` | NestJS | Node |
 |---|---|---|---|
-| `0.13.x` | `0.13.x` | `^10`, `^11` or `^12` | `>=22.12.0` |
+| `0.15.x` | `0.15.x` | `^10`, `^11` or `^12` | `>=22.12.0` |
+| `0.13.x` | `0.13.x` | `^10` or `^11` | `>=20.18.0` |
 
-Express is the tested platform. The error handler is also tested on Fastify; the rest of the package (`StreamableFile` is platform-agnostic) is expected to work there but is not covered by tests in `0.13`. New NestJS majors land within one minor of upstream release.
+Express is the tested platform. The error handler is also tested on Fastify; the rest of the package (`StreamableFile` is platform-agnostic) is expected to work there but is not covered by tests in `0.15`. New NestJS majors land within one minor of upstream release.
 
 ## Contributing
 
