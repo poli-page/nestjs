@@ -4,12 +4,18 @@ All notable changes to `@poli-page/nestjs` are documented here. Format follows [
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-17
+
+Requires `@poli-page/sdk` 0.15 (`^0.15.0`, `>=0.15.0 <0.16.0`) and passes the Poli Page API contract v0.15.0. There is no 0.14: the package shares its major.minor with the Poli Page API and had nothing to ship for that minor.
+
 ### Added
 
 - Support for NestJS 12. The `@nestjs/common` and `@nestjs/core` peer ranges are now `^10.0.0 || ^11.0.0 || ^12.0.0`. NestJS 12 is ESM-only; this package stays CommonJS and loads it through Node's `require()` of ES modules.
 
 ### Changed
 
+- **Breaking:** requires `@poli-page/sdk` `^0.15.0` (was `^0.13.0`), in `package.json` and the example app.
+- Contract tests: CI runs the integration cases of the Poli Page API contract v0.15.0 (was v0.13.0). Its integration cases are unchanged.
 - **Breaking:** the minimum Node.js version is now 22.12.0 (was 20.18.0). Node 20 reached end of life on 2026-04-30, and Vitest 5 needs Node 22.12 or later. Node 22.12 also loads ES modules with `require()` without a flag, which NestJS 12 needs. CI no longer tests Node 20.
 - The tests run on Vitest 5 with `unplugin-swc` (SWC emits the decorator metadata Nest reads) instead of Jest with `ts-jest`, which cannot load NestJS 12. No effect on the published package.
 
@@ -51,5 +57,6 @@ First release on npm. It requires `@poli-page/sdk` 0.13 and passes the Poli Page
 
 - `PoliPagePdfFile` / `contentDisposition()`: the `Content-Disposition` filename is now escaped per RFC 6266 / RFC 9110 (`\` and `"` as quoted-pairs, ASCII fallback included) and stripped of control characters (CR/LF, TAB, DEL, C1), so a filename can no longer break the header or inject parameters.
 
-[Unreleased]: https://github.com/poli-page/nestjs/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/poli-page/nestjs/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/poli-page/nestjs/compare/v0.13.0...v0.15.0
 [0.13.0]: https://github.com/poli-page/nestjs/releases/tag/v0.13.0

@@ -1,6 +1,6 @@
 {
   "name": "@poli-page/nestjs",
-  "version": "0.13.0",
+  "version": "0.15.0",
   "description": "Official NestJS module for the Poli Page PDF rendering API",
   "license": "MIT",
   "type": "commonjs",
@@ -29,7 +29,7 @@
     "rxjs": "^7.8.0"
   },
   "dependencies": {
-    "@poli-page/sdk": "^0.13.0"
+    "@poli-page/sdk": "^0.15.0"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
